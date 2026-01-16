@@ -29,7 +29,6 @@ The **Somalia Master Health Facility Registry (SMHFR)** is a modern, web-based p
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/zolamars/SMHFR_WEB.git
-    cd SMHFR_WEB/smhf-app
     ```
 
 2.  **Install dependencies:**

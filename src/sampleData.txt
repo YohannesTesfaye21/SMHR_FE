@@ -1,0 +1,32 @@
+Sample data of Facilities
+
+New Facility ID	Latitude	Longitude	State	Region	District	Health Facility Name	Health Facility Type	Ownership	HC partners	HC Project End date	Nutrition Cluster Partners	Damal Caafimaad Partner	Damal Caafimaad Project end date	Better Life Project Partner	Better Life Project End Date	Caafimaad Plus Partner	Caafimaad Plus Project end	Facility In-charge Name	Facility in-charge Number	Operational Status
+BRBNABDU01	2.040533	45.356388	BRA	Benadir 	Abdul Aziz	Abdi Aziz Health Center	Health Center	Government	PSI & BRA	3/31/2026	AAH	No	No	No	No	No	No	Amino Abdi Warsame	615306618	Operational
+BRBNABDU02	2.046604	45.360421	BRA	Benadir 	Abdul Aziz	Forlanini Hospital	National Referral Hospital	Government	PSI & MOH	12/31/2025	AAH	No	No	No	No	No	No	Xuseen Cabdi Xaafid Sheeq	617065639	Operational
+BRBNABDU03	2.048984	45.360456	BRA	Benadir 	Abdul Aziz	Gaarisa TB Clinic	TB Clinic	Government	ASSICD & BRA	12/31/2025	Saacid	No	No	No	No	No	No	Ali Hassan	61 5247976	Operational
+BRBNABDU04	2.044955	45.365555	BRA	Benadir 	Abdul Aziz	Neero Health Center	Health Center	Government	No partner	No partner	No	No	No	No	No	No	No	Feysal Aweys Abdullahi	0615332875	Closed
+BRBNABDU05	2.046153	45.356244	BRA	Benadir 	Abdul Aziz	Ummah Private Hospital	Private Hospital	Private Facility	Private	Private	Private	Private	Private	Private	Private	Private	Private	Mohamed Hussein 	615564104	Operational
+BRBNBOND01	2.047391	45.342063	BRA	Benadir 	Bondheere	Boondheere Health Center	Health Center	Government	PSI, CESVI&  BRA	3/31/2026	WFP	No	No	No	No	No	No	Asma Osman Mohamod	0770598408	Operational
+BRBNBOND02	2.04002	45.341815	BRA	Benadir 	Bondheere	Boondheere YK Health Center	Health Center	Government	No partner	No partner	No	No	No	No	No	No	No	Closed	Closed	Closed
+BRBNBOND03	2.042473	45.345674	BRA	Benadir 	Bondheere	Wiil-Waal Health Center	Health Center	Government	YOUTHLINK	3/31/2026	Concer	No	No	No	No	Youthlink	1/7/2027	Farhia Bashiir Mohamed	0615544455	Operational
+BRBNDEYN01	2.05306	45.298383	BRA	Benadir 	Deynile	77 Health Center	Health Center	Government	IRW	10/1/2026	islamic	No	No	No	No	No	No	Hassan Abdi Hassan	615788670	Operational
+
+
+
+
+		Data				
+State	Region	Count of District	Count of Health Facility Name	Count of Health Facility Type	Count of Ownership	Count of HC partners
+BRA	Benadir 	175	175	175	175	175
+Galmudug 	Galgadud 	112	112	112	112	112
+	Mudug 	113	113	113	113	113
+Hirshabelle 	Hiiraan 	122	122	122	122	122
+	Middle Shebelle 	126	126	126	126	126
+Jubaland 	Gedo 	98	98	98	98	98
+	Lower Juba 	103	103	103	103	103
+North East 	Cayn	27	27	27	27	27
+	Sanaag	12	12	12	12	12
+	Sool	55	55	55	55	55
+Southwest 	Bakool	70	70	70	70	70
+	Bay	137	137	137	137	137
+	Lower Shabelle	94	94	94	94	94
+Total Result		1244	1244	1244	1244	1244

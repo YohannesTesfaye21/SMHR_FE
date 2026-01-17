@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState } from 'react';
-import FilterPanel from './FilterPanel';
+import FilterPanel, { FilterOptionItem } from './FilterPanel';
 import { Filter } from 'lucide-react';
 
 type FilterOptions = {
-    regions: string[];
-    districts: string[];
-    types: string[];
+    regions: FilterOptionItem[];
+    districts: FilterOptionItem[];
+    types: FilterOptionItem[];
     owners: string[];
     statuses: string[];
 };

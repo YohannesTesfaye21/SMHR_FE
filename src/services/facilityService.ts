@@ -10,7 +10,8 @@ import {
   CardDataApiResponse,
   ChartDataListApiResponse,
   StateStatisticsListApiResponse,
-  TopRegionListApiResponse
+  TopRegionListApiResponse,
+  ApiResponse
 } from '@/types/apiTypes';
 
 export const facilityService = {
@@ -63,5 +64,18 @@ export const facilityService = {
 
   getTopRegions: async () => {
     return apiClient.get<any, TopRegionListApiResponse>('/api/Dashboard/top-regions');
+  },
+
+  // Admin APIs - Create, Update, Delete
+  createFacility: async (data: any) => {
+    return apiClient.post<any, HealthFacilityDTOApiResponse>('/api/HealthFacilities', data);
+  },
+
+  updateFacility: async (id: number, data: any) => {
+    return apiClient.put<any, HealthFacilityDTOApiResponse>(`/api/HealthFacilities/${id}`, data);
+  },
+
+  deleteFacility: async (id: number) => {
+    return apiClient.delete<any, ApiResponse<null>>(`/api/HealthFacilities/${id}`);
   }
 };

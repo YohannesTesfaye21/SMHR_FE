@@ -9,6 +9,23 @@ const apiClient = axios.create({
   },
 });
 
+// Request interceptor to add auth token if available
+apiClient.interceptors.request.use(
+  (config) => {
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {

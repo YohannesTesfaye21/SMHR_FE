@@ -133,3 +133,24 @@ export type CardDataApiResponse = ApiResponse<CardDataDTO>;
 export type ChartDataListApiResponse = ApiResponse<ChartDataDTO[]>;
 export type StateStatisticsListApiResponse = ApiResponse<StateStatisticsDTO[]>;
 export type TopRegionListApiResponse = ApiResponse<TopRegionDTO[]>;
+
+// Authentication Types
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  refreshToken?: string;
+  user: {
+    id: number;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+  };
+  expiresIn?: number;
+}
+
+export type LoginApiResponse = ApiResponse<LoginResponse>;

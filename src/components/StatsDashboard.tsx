@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { REGIONAL_STATISTICS, getStatsByState } from '@/lib/statistics';
-import { Building2, MapPin, TrendingUp, Award, ChevronDown, ChevronUp, Users, Layers, Search } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Building2, MapPin, Award, ChevronDown, ChevronUp, Layers, Search, RotateCw, Map } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, AreaChart, Area, Treemap } from 'recharts';
+import { useDashboardCards, useDashboardCharts, useDashboardStateStats, useTopRegions } from '@/hooks/useDashboard';
+import { StateStatisticsDTO } from '@/types/apiTypes';
 
 // Premium color palette
 const COLORS = {
@@ -12,6 +13,7 @@ const COLORS = {
     blue: ['#4189DD', '#026aa2'],
     teal: ['#0d9488', '#0f766e'],
     purple: ['#8b5cf6', '#6d28d9'],
+    orange: ['#f97316', '#c2410c'],
   }
 };
 
@@ -19,7 +21,7 @@ const COLORS = {
 function AnimatedCounter({ end, duration = 2000, suffix = '' }: { end: number; duration?: number; suffix?: string }) {
   const [count, setCount] = useState(0);
 
-  useEffect(() => {
+  React.useEffect(() => {
     let startTime: number;
     let animationFrame: number;
 
@@ -45,7 +47,7 @@ function AnimatedCounter({ end, duration = 2000, suffix = '' }: { end: number; d
 
 // Progress bar component
 function ProgressBar({ value, max, color = 'var(--primary-500)' }: { value: number; max: number; color?: string }) {
-  const percentage = (value / max) * 100;
+  const percentage = max > 0 ? (value / max) * 100 : 0;
   
   return (
     <div style={{ 
@@ -91,6 +93,59 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   );
 }
 
+// Summary Card Component
+function SummaryCard({ title, value, icon, color, delay = 0 }: { title: string; value: number; icon: React.ReactNode; color: string[]; delay?: number }) {
+  return (
+    <div
+      className="glass-premium shadow-premium"
+      style={{
+        padding: '1.5rem',
+        borderRadius: '20px',
+        opacity: 0,
+        animation: `fadeInUp 0.6s ease-out ${delay}s forwards`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1.5rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: '100px',
+        height: '100px',
+        background: `radial-gradient(circle at top right, ${color[0]}20, transparent 70%)`,
+        borderRadius: '0 20px 0 100%',
+      }} />
+
+      <div style={{
+        width: '60px',
+        height: '60px',
+        borderRadius: '16px',
+        background: `linear-gradient(135deg, ${color[0]}, ${color[1]})`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: `0 8px 16px -4px ${color[0]}50`,
+        flexShrink: 0,
+      }}>
+        {React.cloneElement(icon as React.ReactElement, { color: 'white', size: 28 })}
+      </div>
+
+      <div>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem', fontWeight: 500 }}>
+          {title}
+        </p>
+        <h3 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--gray-900)' }}>
+          <AnimatedCounter end={value || 0} />
+        </h3>
+      </div>
+    </div>
+  );
+}
+
 // Chart card wrapper
 function ChartCard({ title, children, delay = 0 }: { title: string; children: React.ReactNode; delay?: number }) {
   return (
@@ -101,6 +156,7 @@ function ChartCard({ title, children, delay = 0 }: { title: string; children: Re
         borderRadius: '20px',
         opacity: 0,
         animation: `fadeInUp 0.6s ease-out ${delay}s forwards`,
+        minHeight: '350px'
       }}
     >
       <h3 style={{ 
@@ -114,7 +170,7 @@ function ChartCard({ title, children, delay = 0 }: { title: string; children: Re
       }}>
         {title}
       </h3>
-      <div className="chart-container">
+      <div className="chart-container" style={{ width: '100%', height: '280px' }}>
         {children}
       </div>
     </div>
@@ -123,17 +179,13 @@ function ChartCard({ title, children, delay = 0 }: { title: string; children: Re
 
 // State accordion card
 function StateCard({ 
-  state, 
-  regions, 
-  totalFacilities,
+  stateData, 
   maxFacilities,
   isExpanded, 
   onToggle,
   delay = 0,
 }: {
-  state: string;
-  regions: typeof REGIONAL_STATISTICS;
-  totalFacilities: number;
+  stateData: StateStatisticsDTO;
   maxFacilities: number;
   isExpanded: boolean;
   onToggle: () => void;
@@ -172,7 +224,7 @@ function StateCard({
               color: 'var(--gray-900)',
               marginBottom: '0.5rem',
             }}>
-              {state}
+              {stateData.stateName}
             </h3>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <span style={{ 
@@ -183,7 +235,7 @@ function StateCard({
                 color: 'var(--text-secondary)',
               }}>
                 <MapPin size={14} />
-                {regions.length} region{regions.length > 1 ? 's' : ''}
+                {stateData.totalRegions} region{stateData.totalRegions !== 1 ? 's' : ''}
               </span>
               <span style={{ 
                 display: 'flex', 
@@ -193,7 +245,7 @@ function StateCard({
                 color: 'var(--text-secondary)',
               }}>
                 <Building2 size={14} />
-                <AnimatedCounter end={totalFacilities} duration={1500} /> facilities
+                <AnimatedCounter end={stateData.totalFacilities} duration={1500} /> facilities
               </span>
             </div>
           </div>
@@ -207,7 +259,7 @@ function StateCard({
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}>
-              {totalFacilities}
+              {stateData.totalFacilities}
             </div>
             <div style={{
               width: '36px',
@@ -228,7 +280,7 @@ function StateCard({
         </div>
         
         {/* Progress bar */}
-        <ProgressBar value={totalFacilities} max={maxFacilities} />
+        <ProgressBar value={stateData.totalFacilities} max={maxFacilities} />
       </div>
 
       {/* Expandable content */}
@@ -244,7 +296,7 @@ function StateCard({
           gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
           gap: '1rem',
         }}>
-          {regions.map((region, idx) => (
+          {(stateData.regions || []).map((region, idx) => (
             <div 
               key={idx}
               style={{
@@ -282,7 +334,7 @@ function StateCard({
                     <MapPin size={16} color="white" />
                   </div>
                   <h4 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, color: 'var(--gray-800)' }}>
-                    {region.region}
+                    {region.name}
                   </h4>
                 </div>
                 
@@ -292,9 +344,8 @@ function StateCard({
                   gap: '0.75rem',
                 }}>
                   {[
-                    { label: 'Facilities', value: region.facilityCount, color: 'var(--primary-600)' },
-                    { label: 'Districts', value: region.districtCount, color: 'var(--gray-700)' },
-                    { label: 'Partners', value: region.partnerCount, color: 'var(--gray-700)' },
+                    { label: 'Facilities', value: region.totalFacility, color: 'var(--primary-600)' },
+                    { label: 'Districts', value: region.totalDistrict || '-', color: 'var(--gray-700)' }, 
                   ].map((stat, i) => (
                     <div key={i} style={{ 
                       textAlign: 'center', 
@@ -333,63 +384,116 @@ function StateCard({
 }
 
 export default function StatsDashboard() {
-  const stateStats = getStatsByState();
-  const [expandedState, setExpandedState] = useState<string | null>(null);
+  const [expandedState, setExpandedState] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Prepare chart data
-  const barChartData = stateStats.map(stat => ({
-    name: stat.state,
-    facilities: stat.facilityCount,
-    regions: stat.regionCount
-  }));
+  // Fetch Data
+  const { data: cardsData, isLoading: cardsLoading } = useDashboardCards();
+  const { data: stateStatsData, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useDashboardStateStats();
+  const { data: topRegionsData, isLoading: topLoading } = useTopRegions();
+  const { data: barChartData, isLoading: barLoading } = useDashboardCharts('bar', 'region'); 
+  const { data: pieChartData, isLoading: pieLoading } = useDashboardCharts('pie', 'region'); 
 
-  const donutChartData = stateStats.map(stat => ({
-    name: stat.state,
-    value: stat.facilityCount
-  }));
+  // Derived Data
+  const cardStats = cardsData?.data;
+  const stateStats = stateStatsData?.data || [];
+  const topRegions = topRegionsData?.data || [];
+  const barData = (barChartData?.data || []).map(d => ({ name: d.label, value: d.value }));
+  const pieData = (pieChartData?.data || []).map(d => ({ name: d.label, value: d.value }));
 
-  // Treemap data
+  // Loading State
+  const isLoading = statsLoading || topLoading || barLoading || pieLoading || cardsLoading;
+
+
+  if (statsError) {
+      return (
+           <div style={{ paddingTop: '4rem', paddingBottom: '4rem', textAlign: 'center' }}>
+              <div style={{ padding: '2rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '12px', color: '#991B1B', maxWidth: '600px', margin: '0 auto' }}>
+                  <h3 style={{ marginBottom: '0.5rem' }}>Service Unavailable</h3>
+                  <p>We are having trouble loading the dashboard statistics.</p>
+                  <button onClick={() => refetchStats()} style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: '#991B1B', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <RotateCw size={16} /> Retry
+                  </button>
+              </div>
+          </div>
+      );
+  }
+
+  if (isLoading) {
+       return (
+          <div style={{ paddingTop: '8rem', paddingBottom: '8rem', textAlign: 'center' }}>
+               <div className="spinner" style={{ marginBottom: '1rem', width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid var(--primary-500)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div>
+               <p>Loading dashboard...</p>
+               <style dangerouslySetInnerHTML={{__html: `
+                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                 `}} />
+          </div>
+      );
+  }
+
+  // Calculate totals
+  const totalFacilities = stateStats.reduce((sum, s) => sum + s.totalFacilities, 0);
+  const maxStateFacilities = Math.max(...stateStats.map(s => s.totalFacilities));
+
+  // Filter states
+  const filteredStates = stateStats.filter(s => 
+    s.stateName?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Fallback for treemap (using state stats if no specific api)
   const treemapData = stateStats.map((stat, idx) => ({
-    name: stat.state,
-    size: stat.facilityCount,
+    name: stat.stateName,
+    size: stat.totalFacilities,
     fill: COLORS.primary[idx % COLORS.primary.length],
   }));
 
-  // Area chart data - simulated trend
+  // Fallback for Trend (Area Chart) - Simulated based on real data
   const trendData = stateStats.map(stat => ({
-    name: stat.state,
-    facilities: stat.facilityCount,
-    target: Math.round(stat.facilityCount * 1.15),
+    name: stat.stateCode || stat.stateName.substring(0, 3).toUpperCase(),
+    facilities: stat.totalFacilities,
+    target: Math.round(stat.totalFacilities * 1.15),
   }));
-
-  // Group regions by state
-  const regionsByState = useMemo(() => {
-    return REGIONAL_STATISTICS.reduce((acc, region) => {
-      if (!acc[region.state]) {
-        acc[region.state] = [];
-      }
-      acc[region.state].push(region);
-      return acc;
-    }, {} as Record<string, typeof REGIONAL_STATISTICS>);
-  }, []);
-
-  // Find top performing regions
-  const topRegions = [...REGIONAL_STATISTICS]
-    .sort((a, b) => b.facilityCount - a.facilityCount)
-    .slice(0, 3);
-
-  // Calculate total for percentage
-  const totalFacilities = stateStats.reduce((sum, s) => sum + s.facilityCount, 0);
-  const maxStateFacilities = Math.max(...stateStats.map(s => s.facilityCount));
-
-  // Filter states based on search
-  const filteredStates = Object.entries(regionsByState).filter(([state]) => 
-    state.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div>
+      {/* Summary Cards */}
+      <div 
+        style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+          gap: '1.5rem', 
+          marginBottom: '2rem' 
+        }}
+      >
+        <SummaryCard 
+          title="Total Facilities" 
+          value={cardStats?.totalFacilities || 0} 
+          icon={<Building2 />} 
+          color={COLORS.gradient.blue} 
+          delay={0}
+        />
+        <SummaryCard 
+          title="Total States" 
+          value={cardStats?.totalStates || 0} 
+          icon={<Map />} 
+          color={COLORS.gradient.teal} 
+          delay={0.1}
+        />
+        <SummaryCard 
+          title="Total Regions" 
+          value={cardStats?.totalRegions || 0} 
+          icon={<Layers />} 
+          color={COLORS.gradient.purple} 
+          delay={0.2}
+        />
+        <SummaryCard 
+          title="Total Districts" 
+          value={cardStats?.totalDistricts || 0} 
+          icon={<MapPin />} 
+          color={COLORS.gradient.orange} 
+          delay={0.3}
+        />
+      </div>
       {/* Top Performers Highlight */}
       <div 
         className="glass-dark"
@@ -436,6 +540,8 @@ export default function StatsDashboard() {
             gap: '1rem',
             margin: '-0.5rem',
             padding: '0.5rem',
+            overflowX: 'auto',
+            paddingBottom: '1rem' // Scrollbar space
           }}
         >
           {topRegions.map((region, idx) => (
@@ -481,14 +587,14 @@ export default function StatsDashboard() {
                 margin: 0,
                 color: 'white',
               }}>
-                {region.region}
+                {region.regionName}
               </h3>
               <p style={{ 
                 fontSize: '0.8rem', 
                 color: 'rgba(255,255,255,0.7)', 
                 margin: '0.25rem 0 0.75rem',
               }}>
-                {region.state}
+                {region.stateName}
               </p>
               
               <div style={{ 
@@ -508,15 +614,6 @@ export default function StatsDashboard() {
               }}>
                 facilities
               </p>
-              
-              {/* Mini progress */}
-              <div style={{ marginTop: '0.75rem' }}>
-                <ProgressBar 
-                  value={region.facilityCount} 
-                  max={topRegions[0].facilityCount} 
-                  color="rgba(255,255,255,0.8)"
-                />
-              </div>
             </div>
           ))}
         </div>
@@ -531,9 +628,9 @@ export default function StatsDashboard() {
       }}>
         
         {/* Bar Chart */}
-        <ChartCard title="📊 Facilities by State" delay={0.2}>
+        <ChartCard title="📊 Facilities by Region" delay={0.2}>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <BarChart data={barData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#4189DD" stopOpacity={1}/>
@@ -554,7 +651,7 @@ export default function StatsDashboard() {
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(65, 137, 221, 0.08)' }} />
               <Bar 
-                dataKey="facilities" 
+                dataKey="value" 
                 fill="url(#barGradient)" 
                 radius={[6, 6, 0, 0]} 
                 name="Facilities"
@@ -564,11 +661,11 @@ export default function StatsDashboard() {
         </ChartCard>
 
         {/* Donut Chart */}
-        <ChartCard title="🎯 Distribution by State" delay={0.3}>
+        <ChartCard title="🎯 Distribution by Region" delay={0.3}>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
-                data={donutChartData}
+                data={pieData}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
@@ -578,7 +675,7 @@ export default function StatsDashboard() {
                 animationBegin={0}
                 animationDuration={1000}
               >
-                {donutChartData.map((entry, index) => (
+                {pieData.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
                     fill={COLORS.primary[index % COLORS.primary.length]}
@@ -657,7 +754,7 @@ export default function StatsDashboard() {
               aspectRatio={4/3}
               stroke="white"
               animationDuration={500}
-              content={({ x, y, width, height, name, fill }) => (
+              content={({ x, y, width, height, name, fill }: any) => (
                 <g>
                   <rect
                     x={x}
@@ -766,18 +863,14 @@ export default function StatsDashboard() {
 
         {/* State Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {filteredStates.map(([state, regions], idx) => {
-            const totalFacilities = regions.reduce((sum, r) => sum + r.facilityCount, 0);
-            
+          {filteredStates.map((state, idx) => {
             return (
               <StateCard
-                key={state}
-                state={state}
-                regions={regions}
-                totalFacilities={totalFacilities}
+                key={state.stateId}
+                stateData={state}
                 maxFacilities={maxStateFacilities}
-                isExpanded={expandedState === state}
-                onToggle={() => setExpandedState(expandedState === state ? null : state)}
+                isExpanded={expandedState === state.stateId}
+                onToggle={() => setExpandedState(expandedState === state.stateId ? null : state.stateId)}
                 delay={0.1 + idx * 0.05}
               />
             );

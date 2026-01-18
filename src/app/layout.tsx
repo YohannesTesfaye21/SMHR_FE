@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
+import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "Somalia Master Health Facility Registry",
@@ -15,10 +16,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Header />
-        <main style={{ minHeight: '80vh' }}>
-          {children}
-        </main>
+        <Providers>
+          <Header />
+          <main style={{ minHeight: '80vh' }}>
+            {children}
+          </main>
+        </Providers>
         <footer style={{ 
           background: 'var(--gray-900)', 
           color: 'var(--gray-300)', 

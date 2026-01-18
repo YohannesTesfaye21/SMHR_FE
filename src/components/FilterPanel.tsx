@@ -4,10 +4,13 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { X, Filter } from 'lucide-react';
 
+// Shared type for filter options
+export type FilterOptionItem = { id: string | number; name: string };
+
 type FilterOptions = {
-    regions: string[];
-    districts: string[];
-    types: string[];
+    regions: FilterOptionItem[];
+    districts: FilterOptionItem[];
+    types: FilterOptionItem[];
     owners: string[];
     statuses: string[];
 };
@@ -18,11 +21,11 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
     
     // Local state for filters
     const [filters, setFilters] = useState({
-        region: searchParams.get('region') || '',
-        district: searchParams.get('district') || '',
-        type: searchParams.get('type') || '',
-        owner: searchParams.get('owner') || '',
-        status: searchParams.get('status') || '',
+        regionId: searchParams.get('regionId') || '',
+        districtId: searchParams.get('districtId') || '',
+        facilityTypeId: searchParams.get('facilityTypeId') || '',
+        ownership: searchParams.get('ownership') || '',
+        operationalStatus: searchParams.get('operationalStatus') || '',
     });
 
     const handleFilterChange = (key: string, value: string) => {
@@ -40,19 +43,34 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
             }
         });
 
+        // Reset page to 1 on filter change
+        params.delete('pageNumber');
+
         router.push(`/facilities?${params.toString()}`);
         onClose();
     };
 
     const clearFilters = () => {
         setFilters({
-            region: '',
-            district: '',
-            type: '',
-            owner: '',
-            status: ''
+            regionId: '',
+            districtId: '',
+            facilityTypeId: '',
+            ownership: '',
+            operationalStatus: ''
         });
-        router.push('/facilities');
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('regionId');
+        params.delete('districtId');
+        params.delete('facilityTypeId');
+        params.delete('ownership');
+        params.delete('operationalStatus');
+        const q = params.get('q');
+        if (q) {
+             router.push(`/facilities?q=${q}`);
+        } else {
+             router.push('/facilities');
+        }
+       
         onClose();
     };
 
@@ -120,8 +138,8 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                             Region
                         </label>
                         <select
-                            value={filters.region}
-                            onChange={(e) => handleFilterChange('region', e.target.value)}
+                            value={filters.regionId}
+                            onChange={(e) => handleFilterChange('regionId', e.target.value)}
                             style={{
                                 width: '100%',
                                 padding: '0.5rem',
@@ -134,7 +152,7 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                         >
                             <option value="">All Regions</option>
                             {options.regions.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
+                                <option key={opt.id} value={opt.id}>{opt.name}</option>
                             ))}
                         </select>
                     </div>
@@ -144,8 +162,8 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                             District
                         </label>
                         <select
-                            value={filters.district}
-                            onChange={(e) => handleFilterChange('district', e.target.value)}
+                            value={filters.districtId}
+                            onChange={(e) => handleFilterChange('districtId', e.target.value)}
                             style={{
                                 width: '100%',
                                 padding: '0.5rem',
@@ -158,7 +176,7 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                         >
                             <option value="">All Districts</option>
                             {options.districts.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
+                                <option key={opt.id} value={opt.id}>{opt.name}</option>
                             ))}
                         </select>
                     </div>
@@ -168,8 +186,8 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                             Facility Type
                         </label>
                         <select
-                            value={filters.type}
-                            onChange={(e) => handleFilterChange('type', e.target.value)}
+                            value={filters.facilityTypeId}
+                            onChange={(e) => handleFilterChange('facilityTypeId', e.target.value)}
                             style={{
                                 width: '100%',
                                 padding: '0.5rem',
@@ -182,7 +200,7 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                         >
                             <option value="">All Types</option>
                             {options.types.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
+                                <option key={opt.id} value={opt.id}>{opt.name}</option>
                             ))}
                         </select>
                     </div>
@@ -192,8 +210,8 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                             Ownership
                         </label>
                         <select
-                            value={filters.owner}
-                            onChange={(e) => handleFilterChange('owner', e.target.value)}
+                            value={filters.ownership}
+                            onChange={(e) => handleFilterChange('ownership', e.target.value)}
                             style={{
                                 width: '100%',
                                 padding: '0.5rem',
@@ -216,8 +234,8 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                             Status
                         </label>
                         <select
-                            value={filters.status}
-                            onChange={(e) => handleFilterChange('status', e.target.value)}
+                            value={filters.operationalStatus}
+                            onChange={(e) => handleFilterChange('operationalStatus', e.target.value)}
                             style={{
                                 width: '100%',
                                 padding: '0.5rem',

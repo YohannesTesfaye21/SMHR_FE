@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
-import FilterPanel from './FilterPanel';
-import { Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import FilterPanel, { FilterOptionItem } from './FilterPanel';
+import { Filter, Search } from 'lucide-react';
 
 type FilterOptions = {
-    regions: string[];
-    districts: string[];
-    types: string[];
+    regions: FilterOptionItem[];
+    districts: FilterOptionItem[];
+    types: FilterOptionItem[];
     owners: string[];
     statuses: string[];
 };
@@ -24,6 +25,25 @@ export default function FilterPanelWrapper({
   query: string;
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
+  const [localQuery, setLocalQuery] = useState(query);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    setLocalQuery(query);
+  }, [query]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams(searchParams.toString());
+    if (localQuery) {
+        params.set('q', localQuery);
+    } else {
+        params.delete('q');
+    }
+    params.delete('pageNumber');
+    router.push(`/facilities?${params.toString()}`);
+  };
 
   return (
     <>
@@ -35,7 +55,25 @@ export default function FilterPanelWrapper({
                  </p>
             </div>
             
-            <div>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <form onSubmit={handleSearch} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <Search size={18} style={{ position: 'absolute', left: '12px', color: 'var(--gray-400)' }} />
+                    <input 
+                        type="text" 
+                        placeholder="Search facilities..." 
+                        value={localQuery}
+                        onChange={(e) => setLocalQuery(e.target.value)}
+                        style={{ 
+                            padding: '0.75rem 0.75rem 0.75rem 2.5rem', 
+                            borderRadius: '12px', 
+                            border: '1px solid var(--gray-200)',
+                            fontSize: '0.9rem',
+                            width: '240px',
+                            background: 'white'
+                        }}
+                    />
+                </form>
+
                 <button 
                     onClick={() => setFilterOpen(true)}
                     className="glass" 
@@ -43,7 +81,8 @@ export default function FilterPanelWrapper({
                         display: 'flex', alignItems: 'center', gap: '0.5rem', 
                         padding: '0.75rem 1.25rem', borderRadius: '12px',
                         cursor: 'pointer', background: 'white', fontSize: '0.9rem', fontWeight: 500,
-                        border: 'none'
+                        border: 'none',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                     }}
                 >
                     <Filter size={18} /> Filters
@@ -59,3 +98,4 @@ export default function FilterPanelWrapper({
     </>
   );
 }
+

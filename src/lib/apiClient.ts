@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://144.91.86.199:8080';
+// Use Next.js API proxy routes (same origin) to avoid mixed content issues
+// The proxy routes will forward requests to the backend API server
+const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://144.91.86.199:8080');
 
 const apiClient = axios.create({
   baseURL: BASE_URL,

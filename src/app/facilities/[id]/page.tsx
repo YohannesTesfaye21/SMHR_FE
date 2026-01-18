@@ -5,6 +5,13 @@ import Link from 'next/link';
 import { ArrowLeft, MapPin, Phone, Mail, Clock, ShieldCheck, Share2, User, RotateCw } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
+// Dynamic import for Map to avoid SSR issues
+import dynamic from 'next/dynamic';
+const FacilityMap = dynamic(() => import('@/components/FacilityMap'), {
+  loading: () => <div style={{ height: '300px', width: '100%', background: 'var(--gray-100)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading Map...</div>,
+  ssr: false
+});
+
 export default function FacilityDetailsPage({ params }: { params: { id: string } }) {
   const facilityId = Number(params.id);
 
@@ -108,19 +115,6 @@ export default function FacilityDetailsPage({ params }: { params: { id: string }
                         </div>
                     </div>
                  </div>
-
-                 {/* Services Section (Placeholder as API doesn't provide them yet) */}
-                 <div className="glass" style={{ padding: '2rem', borderRadius: '24px', background: 'white' }}>
-                    <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Available Services</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        {['General Medicine', 'Maternity', 'Pediatrics', 'Emergency Care', 'Laboratory', 'Pharmacy'].map(s => (
-                            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <ShieldCheck size={18} color="var(--primary-500)" />
-                                <span>{s}</span>
-                            </div>
-                        ))}
-                    </div>
-                 </div>
             </div>
 
             {/* Sidebar */}
@@ -129,14 +123,6 @@ export default function FacilityDetailsPage({ params }: { params: { id: string }
                     <h3 style={{ marginBottom: '1.5rem' }}>Contact Info</h3>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <User size={20} color="var(--primary-500)" />
-                            <div>
-                                <p style={{ fontWeight: 600 }}>In Charge</p>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--gray-600)' }}>{facility.facilityInChargeName || 'N/A'}</p>
-                            </div>
-                        </div>
-
                          <div style={{ display: 'flex', gap: '1rem' }}>
                             <Phone size={20} color="var(--primary-500)" />
                             <div>
@@ -144,17 +130,39 @@ export default function FacilityDetailsPage({ params }: { params: { id: string }
                                 <p style={{ fontSize: '0.9rem', color: 'var(--gray-600)' }}>{facility.facilityInChargeNumber || 'N/A'}</p>
                             </div>
                         </div>
-
-                         <div style={{ display: 'flex', gap: '1rem' }}>
-                            <Clock size={20} color="var(--primary-500)" />
-                            <div>
-                                <p style={{ fontWeight: 600 }}>Opening Hours</p>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--gray-600)' }}>Mon - Sun: 8:00 AM - 4:00 PM</p>
-                            </div>
-                        </div>
                     </div>
 
-                    <button className="btn-primary" style={{ width: '100%', marginTop: '2rem', justifyContent: 'center', display: 'flex' }}>
+                    <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
+                        <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <MapPin size={18} /> Location
+                        </h4>
+                        
+                        {facility.latitude && facility.longitude ? (
+                            <FacilityMap 
+                                latitude={facility.latitude} 
+                                longitude={facility.longitude} 
+                                name={facility.healthFacilityName || 'Facility'} 
+                            />
+                        ) : (
+                            <div style={{ 
+                                height: '200px', 
+                                background: 'var(--gray-50)', 
+                                borderRadius: '16px', 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                color: 'var(--text-secondary)',
+                                textAlign: 'center',
+                                padding: '1rem'
+                            }}>
+                                <MapPin size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                                <p style={{ fontSize: '0.9rem' }}>Location coordinates not available</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <button className="btn-primary" style={{ width: '100%', marginTop: '1.5rem', justifyContent: 'center', display: 'flex' }}>
                         Get Directions
                     </button>
                 </div>

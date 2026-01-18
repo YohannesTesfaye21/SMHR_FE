@@ -76,7 +76,7 @@ export default function Home() {
       </section>
 
       {/* Statistics Section */}
-      <section style={{ padding: '4rem 0', background: 'var(--gray-50)' }}>
+      {/* <section style={{ padding: '4rem 0', background: 'var(--gray-50)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>National Statistics</h2>
@@ -85,7 +85,6 @@ export default function Home() {
             </p>
           </div>
           
-          {/* Summary Cards Only */}
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
@@ -147,7 +146,7 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

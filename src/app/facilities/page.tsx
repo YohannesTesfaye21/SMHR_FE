@@ -1,11 +1,18 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import FacilityCard from '@/components/FacilityCard';
 import FilterPanelWrapper from '@/components/FilterPanelWrapper';
-import { Search, RotateCw } from 'lucide-react';
+import { Search, RotateCw, Map, List } from 'lucide-react';
 import { FacilityFilterParams, HealthFacilityDTO } from '@/types/apiTypes';
 import { useFacilities, useRegions, useDistricts, useFacilityTypes } from '@/hooks/useFacilities';
+
+// Dynamic import for Map
+import dynamic from 'next/dynamic';
+const FacilitiesMap = dynamic(() => import('@/components/FacilitiesMap'), {
+  loading: () => <div style={{ height: '600px', width: '100%', background: 'var(--gray-100)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading Map...</div>,
+  ssr: false
+});
 
 export default function FacilitiesPage({
   searchParams,
@@ -20,17 +27,18 @@ export default function FacilitiesPage({
     pageNumber?: string;
   };
 }) {
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const query = searchParams.q || '';
   
   const filters: FacilityFilterParams = {
-    // facilityName: query,
+    facilityName: query,
     regionId: searchParams.regionId ? Number(searchParams.regionId) : undefined,
     districtId: searchParams.districtId ? Number(searchParams.districtId) : undefined,
     facilityTypeId: searchParams.facilityTypeId ? Number(searchParams.facilityTypeId) : undefined,
     ownership: searchParams.ownership,
     operationalStatus: searchParams.operationalStatus,
     pageNumber: searchParams.pageNumber ? Number(searchParams.pageNumber) : 1,
-    pageSize: 50
+    pageSize: viewMode === 'map' ? 1000 : 50 // Fetch more items for map view to be useful
   };
 
   const { 
@@ -76,6 +84,56 @@ export default function FacilitiesPage({
   return (
     <div style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
       <div className="container">
+        
+        {/* View Toggle */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+            <div style={{ 
+                background: 'white', 
+                border: '1px solid var(--border-color)', 
+                borderRadius: '8px', 
+                padding: '4px',
+                display: 'inline-flex',
+                gap: '4px'
+            }}>
+                <button 
+                    onClick={() => setViewMode('list')}
+                    style={{
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: viewMode === 'list' ? 'var(--primary-100)' : 'transparent',
+                        color: viewMode === 'list' ? 'var(--primary-700)' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '0.9rem',
+                        fontWeight: 500
+                    }}
+                >
+                    <List size={18} /> List
+                </button>
+                <button 
+                    onClick={() => setViewMode('map')}
+                    style={{
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: viewMode === 'map' ? 'var(--primary-100)' : 'transparent',
+                        color: viewMode === 'map' ? 'var(--primary-700)' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '0.9rem',
+                        fontWeight: 500
+                    }}
+                >
+                    <Map size={18} /> Map
+                </button>
+            </div>
+        </div>
+
         <FilterPanelWrapper 
           options={filterOptions} 
           resultCount={totalCount} 
@@ -91,23 +149,29 @@ export default function FacilitiesPage({
              </div>
           ) : (
              <>
-                {/* Results Grid */}
-                {facilities.length > 0 ? (
-                    <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-                        gap: '1.5rem' 
-                    }}>
-                        {facilities.map((f: HealthFacilityDTO) => (
-                            <FacilityCard key={f.healthFacilityId} facility={f} />
-                        ))}
-                    </div>
+                {viewMode === 'map' ? (
+                    <FacilitiesMap facilities={facilities} />
                 ) : (
-                    <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-secondary)' }}>
-                    <Search size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                    <h3>No facilities found</h3>
-                    <p>Try adjusting your search terms or filters.</p>
-                    </div>
+                    <>
+                        {/* Results Grid */}
+                        {facilities.length > 0 ? (
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                                gap: '1.5rem' 
+                            }}>
+                                {facilities.map((f: HealthFacilityDTO) => (
+                                    <FacilityCard key={f.healthFacilityId} facility={f} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-secondary)' }}>
+                            <Search size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                            <h3>No facilities found</h3>
+                            <p>Try adjusting your search terms or filters.</p>
+                            </div>
+                        )}
+                    </>
                 )}
              </>
           )}

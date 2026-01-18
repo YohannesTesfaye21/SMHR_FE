@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Building2, MapPin, Award, ChevronDown, ChevronUp, Layers, Search, RotateCw } from 'lucide-react';
+import { Building2, MapPin, Award, ChevronDown, ChevronUp, Layers, Search, RotateCw, Map } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, AreaChart, Area, Treemap } from 'recharts';
 import { useDashboardCards, useDashboardCharts, useDashboardStateStats, useTopRegions } from '@/hooks/useDashboard';
 import { StateStatisticsDTO } from '@/types/apiTypes';
@@ -13,6 +13,7 @@ const COLORS = {
     blue: ['#4189DD', '#026aa2'],
     teal: ['#0d9488', '#0f766e'],
     purple: ['#8b5cf6', '#6d28d9'],
+    orange: ['#f97316', '#c2410c'],
   }
 };
 
@@ -88,6 +89,59 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+// Summary Card Component
+function SummaryCard({ title, value, icon, color, delay = 0 }: { title: string; value: number; icon: React.ReactNode; color: string[]; delay?: number }) {
+  return (
+    <div
+      className="glass-premium shadow-premium"
+      style={{
+        padding: '1.5rem',
+        borderRadius: '20px',
+        opacity: 0,
+        animation: `fadeInUp 0.6s ease-out ${delay}s forwards`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1.5rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: '100px',
+        height: '100px',
+        background: `radial-gradient(circle at top right, ${color[0]}20, transparent 70%)`,
+        borderRadius: '0 20px 0 100%',
+      }} />
+
+      <div style={{
+        width: '60px',
+        height: '60px',
+        borderRadius: '16px',
+        background: `linear-gradient(135deg, ${color[0]}, ${color[1]})`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: `0 8px 16px -4px ${color[0]}50`,
+        flexShrink: 0,
+      }}>
+        {React.cloneElement(icon as React.ReactElement, { color: 'white', size: 28 })}
+      </div>
+
+      <div>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem', fontWeight: 500 }}>
+          {title}
+        </p>
+        <h3 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--gray-900)' }}>
+          <AnimatedCounter end={value || 0} />
+        </h3>
+      </div>
     </div>
   );
 }
@@ -334,19 +388,22 @@ export default function StatsDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   
   // Fetch Data
+  const { data: cardsData, isLoading: cardsLoading } = useDashboardCards();
   const { data: stateStatsData, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useDashboardStateStats();
   const { data: topRegionsData, isLoading: topLoading } = useTopRegions();
   const { data: barChartData, isLoading: barLoading } = useDashboardCharts('bar', 'region'); 
   const { data: pieChartData, isLoading: pieLoading } = useDashboardCharts('pie', 'region'); 
 
   // Derived Data
+  const cardStats = cardsData?.data;
   const stateStats = stateStatsData?.data || [];
   const topRegions = topRegionsData?.data || [];
   const barData = (barChartData?.data || []).map(d => ({ name: d.label, value: d.value }));
   const pieData = (pieChartData?.data || []).map(d => ({ name: d.label, value: d.value }));
 
   // Loading State
-  const isLoading = statsLoading || topLoading || barLoading || pieLoading;
+  const isLoading = statsLoading || topLoading || barLoading || pieLoading || cardsLoading;
+
 
   if (statsError) {
       return (
@@ -399,6 +456,44 @@ export default function StatsDashboard() {
 
   return (
     <div>
+      {/* Summary Cards */}
+      <div 
+        style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+          gap: '1.5rem', 
+          marginBottom: '2rem' 
+        }}
+      >
+        <SummaryCard 
+          title="Total Facilities" 
+          value={cardStats?.totalFacilities || 0} 
+          icon={<Building2 />} 
+          color={COLORS.gradient.blue} 
+          delay={0}
+        />
+        <SummaryCard 
+          title="Total States" 
+          value={cardStats?.totalStates || 0} 
+          icon={<Map />} 
+          color={COLORS.gradient.teal} 
+          delay={0.1}
+        />
+        <SummaryCard 
+          title="Total Regions" 
+          value={cardStats?.totalRegions || 0} 
+          icon={<Layers />} 
+          color={COLORS.gradient.purple} 
+          delay={0.2}
+        />
+        <SummaryCard 
+          title="Total Districts" 
+          value={cardStats?.totalDistricts || 0} 
+          icon={<MapPin />} 
+          color={COLORS.gradient.orange} 
+          delay={0.3}
+        />
+      </div>
       {/* Top Performers Highlight */}
       <div 
         className="glass-dark"

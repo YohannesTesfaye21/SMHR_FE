@@ -1,44 +1,59 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 // Use Next.js API proxy routes (same origin) to avoid mixed content issues
 // The proxy routes will forward requests to the backend API server
 // Always use relative URLs on client side to hit Next.js proxy (HTTPS)
 
-// CRITICAL: Always start with empty baseURL to prevent mixed content errors
-// The baseURL will be set dynamically in the interceptor for server-side only
-const apiClient = axios.create({
-  baseURL: '', // Always empty - prevents any HTTP URLs from being set
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// CRITICAL: For client-side, we MUST use empty baseURL to prevent mixed content errors
+// Create separate instances for client and server to avoid any SSR hydration issues
+let apiClient: AxiosInstance;
 
-// Request interceptor: set baseURL only for server-side, ensure empty on client
+if (typeof window !== 'undefined') {
+  // CLIENT-SIDE: Always use empty baseURL - requests go through Next.js proxy (HTTPS)
+  apiClient = axios.create({
+    baseURL: '', // CRITICAL: Empty baseURL forces relative URLs
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+} else {
+  // SERVER-SIDE: Use direct backend URL
+  const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+  const defaultServerURL = isVercel 
+    ? 'https://144.91.86.199:8443'  // HTTPS for Vercel (self-signed cert)
+    : 'http://144.91.86.199:8080';  // HTTP for local development
+  
+  const serverBaseURL = process.env.BACKEND_API_URL || defaultServerURL;
+  
+  apiClient = axios.create({
+    baseURL: serverBaseURL,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
+// Request interceptor: Add auth token and ensure client-side URLs are relative
 apiClient.interceptors.request.use(
   (config) => {
-    // CRITICAL: On client-side, ABSOLUTELY NEVER allow HTTP URLs
-    // Always use relative URLs that go through Next.js proxy (HTTPS)
-    const isClient = typeof window !== 'undefined';
-    
-    if (isClient) {
-      // FORCE empty baseURL on client - ignore any environment variables or defaults
-      // This is CRITICAL to prevent mixed content errors (HTTPS page requesting HTTP resources)
+    // CLIENT-SIDE ONLY: Ensure URLs are always relative (no HTTP/HTTPS)
+    if (typeof window !== 'undefined') {
+      // CRITICAL: Force empty baseURL on every request (defense in depth)
       config.baseURL = '';
       
-      // Ensure the URL is relative (starts with /)
+      // Ensure URL is relative (starts with /)
       if (config.url) {
-        // If URL contains any protocol (http:// or https://), strip it completely
+        // Strip any protocol (http:// or https://) from URL
         if (config.url.startsWith('http://') || config.url.startsWith('https://')) {
           try {
             const urlObj = new URL(config.url);
             config.url = urlObj.pathname + urlObj.search;
           } catch {
-            // If URL parsing fails, use regex to strip protocol and domain
             config.url = config.url.replace(/^https?:\/\/[^/]+/, '');
           }
         }
         
-        // Ensure URL starts with / for relative path
+        // Ensure URL starts with /
         if (!config.url.startsWith('/')) {
           config.url = '/' + config.url;
         }
@@ -50,34 +65,20 @@ apiClient.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
       
-      // Final safety check: Force empty baseURL and validate final URL
-      config.baseURL = '';
+      // Final validation: ensure no HTTP URLs make it through
       const finalUrl = (config.baseURL || '') + (config.url || '');
-      if (finalUrl.startsWith('http://')) {
-        console.error('[apiClient] ERROR: Detected HTTP URL on client!', finalUrl);
-        // Extract just the path to make it relative
-        try {
-          const urlObj = new URL(finalUrl);
-          config.url = urlObj.pathname + urlObj.search;
-          config.baseURL = '';
-        } catch (e) {
-          // Fallback: strip everything before the first /
-          config.url = finalUrl.replace(/^https?:\/\/[^/]+/, '');
-          config.baseURL = '';
+      if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://')) {
+        console.error('[apiClient] ERROR: HTTP/HTTPS URL detected on client!', finalUrl);
+        // Force relative URL
+        const urlMatch = finalUrl.match(/https?:\/\/[^/]+(\/.*)$/);
+        if (urlMatch) {
+          config.url = urlMatch[1];
         }
+        config.baseURL = '';
       }
     } else {
-      // Server-side only: use direct backend URL (server-to-server calls)
-      // On Vercel, use HTTPS with self-signed certificate; local dev uses HTTP
-      const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
-      const defaultServerURL = isVercel 
-        ? 'https://144.91.86.199:8443'  // HTTPS for Vercel (self-signed cert)
-        : 'http://144.91.86.199:8080';  // HTTP for local development
-      
-      // Only use BACKEND_API_URL for server-side, never NEXT_PUBLIC_API_BASE_URL
-      // (NEXT_PUBLIC_* vars are exposed to client and could cause mixed content issues)
-      const serverBaseURL = process.env.BACKEND_API_URL || defaultServerURL;
-      config.baseURL = serverBaseURL;
+      // SERVER-SIDE: Add auth token from headers if present (SSR)
+      // Note: Server-side doesn't have localStorage, so auth must come from headers
     }
     
     return config;

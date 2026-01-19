@@ -48,39 +48,12 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Override adapter on client side to prevent ANY HTTP requests
-if (typeof window !== 'undefined') {
-  // Store original adapter
-  const originalAdapter = apiClient.defaults.adapter || axios.defaults.adapter;
-  
-  // Override adapter to enforce relative URLs
-  apiClient.defaults.adapter = (config: any) => {
-    // Final check before request: ensure NO HTTP URLs
-    const baseURL = config.baseURL || '';
-    const url = config.url || '';
-    
-    // If we detect HTTP anywhere, force to relative
-    if (baseURL.includes('http://') || url.includes('http://')) {
-      console.error('[apiClient] ADAPTER BLOCK: HTTP URL detected, forcing to relative', {
-        baseURL,
-        url,
-      });
-      
-      // Force to relative
-      config.baseURL = '';
-      config.url = sanitizeUrlForClient(url || baseURL);
-      
-      // Verify it's relative now
-      const finalURL = config.url || '';
-      if (finalURL.includes('http://')) {
-        throw new Error('CRITICAL: Unable to sanitize HTTP URL. Mixed Content error prevented.');
-      }
-    }
-    
-    // Use original adapter with sanitized config
-    return originalAdapter!(config);
-  };
-}
+// Note: We don't override the adapter here because:
+// 1. The request interceptor runs BEFORE the adapter and sanitizes URLs
+// 2. Overriding the adapter is complex due to TypeScript types (can be string/array/function)
+// 3. The interceptor provides sufficient protection against HTTP URLs
+// If HTTP URLs still leak through, they'll be caught by the browser's Mixed Content blocker
+// and we'll see helpful error messages in the response interceptor
 
 // Request interceptor: Handle baseURL and auth token
 apiClient.interceptors.request.use(

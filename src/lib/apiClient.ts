@@ -16,27 +16,31 @@ const apiClient = axios.create({
 // Request interceptor: set baseURL only for server-side, ensure empty on client
 apiClient.interceptors.request.use(
   (config) => {
-    // Client-side: ALWAYS use empty baseURL (relative URLs hit Next.js proxy)
-    // This prevents mixed content errors (HTTPS page requesting HTTP resources)
-    if (typeof window !== 'undefined') {
-      // CRITICAL: Force empty baseURL - never allow HTTP URLs on client
-      // This ensures axios constructs relative URLs that hit the Next.js proxy
+    // CRITICAL: On client-side, ABSOLUTELY NEVER allow HTTP URLs
+    // Always use relative URLs that go through Next.js proxy (HTTPS)
+    const isClient = typeof window !== 'undefined';
+    
+    if (isClient) {
+      // FORCE empty baseURL on client - ignore any environment variables or defaults
+      // This is CRITICAL to prevent mixed content errors (HTTPS page requesting HTTP resources)
       config.baseURL = '';
       
-      // Ensure URL is relative (starts with /) - axios will combine with empty baseURL
-      if (config.url && !config.url.startsWith('http') && !config.url.startsWith('/')) {
-        config.url = '/' + config.url;
-      }
-      
-      // Safety check: if URL somehow contains HTTP, strip it to make it relative
-      if (config.url && config.url.startsWith('http://')) {
-        // Extract path from HTTP URL
-        try {
-          const urlObj = new URL(config.url);
-          config.url = urlObj.pathname + urlObj.search;
-        } catch {
-          // If URL parsing fails, try simple string replacement
-          config.url = config.url.replace(/^https?:\/\/[^/]+/, '');
+      // Ensure the URL is relative (starts with /)
+      if (config.url) {
+        // If URL contains any protocol (http:// or https://), strip it completely
+        if (config.url.startsWith('http://') || config.url.startsWith('https://')) {
+          try {
+            const urlObj = new URL(config.url);
+            config.url = urlObj.pathname + urlObj.search;
+          } catch {
+            // If URL parsing fails, use regex to strip protocol and domain
+            config.url = config.url.replace(/^https?:\/\/[^/]+/, '');
+          }
+        }
+        
+        // Ensure URL starts with / for relative path
+        if (!config.url.startsWith('/')) {
+          config.url = '/' + config.url;
         }
       }
       
@@ -45,15 +49,34 @@ apiClient.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      
+      // Final safety check: Force empty baseURL and validate final URL
+      config.baseURL = '';
+      const finalUrl = (config.baseURL || '') + (config.url || '');
+      if (finalUrl.startsWith('http://')) {
+        console.error('[apiClient] ERROR: Detected HTTP URL on client!', finalUrl);
+        // Extract just the path to make it relative
+        try {
+          const urlObj = new URL(finalUrl);
+          config.url = urlObj.pathname + urlObj.search;
+          config.baseURL = '';
+        } catch (e) {
+          // Fallback: strip everything before the first /
+          config.url = finalUrl.replace(/^https?:\/\/[^/]+/, '');
+          config.baseURL = '';
+        }
+      }
     } else {
-      // Server-side: use direct backend URL (server-to-server calls)
+      // Server-side only: use direct backend URL (server-to-server calls)
       // On Vercel, use HTTPS with self-signed certificate; local dev uses HTTP
       const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
       const defaultServerURL = isVercel 
         ? 'https://144.91.86.199:8443'  // HTTPS for Vercel (self-signed cert)
         : 'http://144.91.86.199:8080';  // HTTP for local development
       
-      const serverBaseURL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || defaultServerURL;
+      // Only use BACKEND_API_URL for server-side, never NEXT_PUBLIC_API_BASE_URL
+      // (NEXT_PUBLIC_* vars are exposed to client and could cause mixed content issues)
+      const serverBaseURL = process.env.BACKEND_API_URL || defaultServerURL;
       config.baseURL = serverBaseURL;
     }
     

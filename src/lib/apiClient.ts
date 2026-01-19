@@ -19,15 +19,6 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
  * This pattern allows unsecured backends while keeping the client secure.
  */
 
-// CRITICAL: Always create with empty baseURL to prevent any HTTP URLs in client bundle
-// The interceptor will ensure it stays empty on client, and set it on server if needed
-const apiClient: AxiosInstance = axios.create({
-  baseURL: '', // ALWAYS empty - prevents HTTP URLs in client bundle
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
 // Helper function to detect if we're on the client side
 const isClientSide = (): boolean => {
   return typeof window !== 'undefined';
@@ -47,6 +38,49 @@ const sanitizeUrlForClient = (url: string | undefined): string => {
   
   return sanitized;
 };
+
+// CRITICAL: Always create with empty baseURL to prevent any HTTP URLs in client bundle
+// The interceptor will ensure it stays empty on client, and set it on server if needed
+const apiClient: AxiosInstance = axios.create({
+  baseURL: '', // ALWAYS empty - prevents HTTP URLs in client bundle
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Override adapter on client side to prevent ANY HTTP requests
+if (typeof window !== 'undefined') {
+  // Store original adapter
+  const originalAdapter = apiClient.defaults.adapter || axios.defaults.adapter;
+  
+  // Override adapter to enforce relative URLs
+  apiClient.defaults.adapter = (config: any) => {
+    // Final check before request: ensure NO HTTP URLs
+    const baseURL = config.baseURL || '';
+    const url = config.url || '';
+    
+    // If we detect HTTP anywhere, force to relative
+    if (baseURL.includes('http://') || url.includes('http://')) {
+      console.error('[apiClient] ADAPTER BLOCK: HTTP URL detected, forcing to relative', {
+        baseURL,
+        url,
+      });
+      
+      // Force to relative
+      config.baseURL = '';
+      config.url = sanitizeUrlForClient(url || baseURL);
+      
+      // Verify it's relative now
+      const finalURL = config.url || '';
+      if (finalURL.includes('http://')) {
+        throw new Error('CRITICAL: Unable to sanitize HTTP URL. Mixed Content error prevented.');
+      }
+    }
+    
+    // Use original adapter with sanitized config
+    return originalAdapter!(config);
+  };
+}
 
 // Request interceptor: Handle baseURL and auth token
 apiClient.interceptors.request.use(

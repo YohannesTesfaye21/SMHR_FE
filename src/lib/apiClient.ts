@@ -2,14 +2,18 @@ import axios from 'axios';
 
 // Use Next.js API proxy routes (same origin) to avoid mixed content issues
 // The proxy routes will forward requests to the backend API server
-// On client side (browser), use empty string for relative URLs
-// On server side, use direct backend URL or environment variable
-const BASE_URL = (typeof window !== 'undefined') 
-  ? '' // Client-side: use relative URLs to hit Next.js proxy
-  : (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://144.91.86.199:8080'); // Server-side: direct backend
+// Always use relative URLs on client side to hit Next.js proxy (HTTPS)
+function getBaseURL() {
+  // Client-side: always use empty string for relative URLs (hits Next.js proxy)
+  if (typeof window !== 'undefined') {
+    return '';
+  }
+  // Server-side: use direct backend URL
+  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://144.91.86.199:8080';
+}
 
 const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },

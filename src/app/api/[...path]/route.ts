@@ -4,37 +4,42 @@ const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://144.91.86.199:808
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, params.path, 'GET');
+  const { path } = await params;
+  return proxyRequest(request, path, 'GET');
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, params.path, 'POST');
+  const { path } = await params;
+  return proxyRequest(request, path, 'POST');
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, params.path, 'PUT');
+  const { path } = await params;
+  return proxyRequest(request, path, 'PUT');
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, params.path, 'DELETE');
+  const { path } = await params;
+  return proxyRequest(request, path, 'DELETE');
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, params.path, 'PATCH');
+  const { path } = await params;
+  return proxyRequest(request, path, 'PATCH');
 }
 
 async function proxyRequest(
@@ -47,6 +52,8 @@ async function proxyRequest(
     const path = pathSegments.join('/');
     const searchParams = request.nextUrl.searchParams.toString();
     const backendUrl = `${BACKEND_API_URL}/api/${path}${searchParams ? `?${searchParams}` : ''}`;
+
+    console.log(`[API Proxy] ${method} ${path} -> ${backendUrl}`);
 
     // Get request body if present
     let body = null;
@@ -87,7 +94,7 @@ async function proxyRequest(
       },
     });
   } catch (error) {
-    console.error('Proxy error:', error);
+    console.error('[API Proxy] Error:', error);
     return NextResponse.json(
       { error: 'Proxy request failed', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

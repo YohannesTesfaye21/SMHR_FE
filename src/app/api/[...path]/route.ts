@@ -18,10 +18,89 @@ if (isVercel && BACKEND_API_URL.startsWith('https://')) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 }
 
-// Create HTTPS agent for self-signed certificates (alternative approach)
+// Create HTTPS agent for self-signed certificates
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false // Accept self-signed certificates
 });
+
+// Custom fetch function that handles self-signed certificates
+async function customFetch(url: string, options: RequestInit): Promise<Response> {
+  const urlObj = new URL(url);
+  const isHttps = urlObj.protocol === 'https:';
+  
+  // For HTTPS with self-signed certificates, use https module directly
+  if (isHttps) {
+    return new Promise((resolve, reject) => {
+      // Convert headers to plain object if needed
+      let headers: Record<string, string> = {};
+      if (options.headers) {
+        if (options.headers instanceof Headers) {
+          options.headers.forEach((value, key) => {
+            headers[key] = value;
+          });
+        } else if (Array.isArray(options.headers)) {
+          options.headers.forEach(([key, value]) => {
+            headers[key] = value;
+          });
+        } else {
+          headers = options.headers as Record<string, string>;
+        }
+      }
+
+      const requestOptions = {
+        hostname: urlObj.hostname,
+        port: urlObj.port ? parseInt(urlObj.port) : 443,
+        path: urlObj.pathname + urlObj.search,
+        method: options.method || 'GET',
+        headers,
+        agent: httpsAgent, // Use agent that accepts self-signed certs
+      };
+
+      const req = https.request(requestOptions, (res) => {
+        let data = '';
+        
+        res.on('data', (chunk) => {
+          data += chunk.toString();
+        });
+        
+        res.on('end', () => {
+          // Convert Node.js response to fetch Response
+          const responseInit: ResponseInit = {
+            status: res.statusCode || 200,
+            statusText: res.statusMessage || 'OK',
+            headers: new Headers(res.headers as HeadersInit),
+          };
+          
+          resolve(new Response(data, responseInit));
+        });
+      });
+
+      // Set timeout for the request (30 seconds)
+      req.setTimeout(30000, () => {
+        req.destroy();
+        reject(new Error('Request timeout'));
+      });
+
+      req.on('error', (error) => {
+        reject(error);
+      });
+
+      // Write body if present
+      if (options.body) {
+        if (typeof options.body === 'string') {
+          req.write(options.body);
+        } else {
+          req.write(Buffer.from(options.body as ArrayBuffer));
+        }
+      }
+      
+      req.end();
+    });
+  }
+  
+  // For HTTP, use regular fetch
+  return fetch(url, options);
+}
 
 export async function GET(
   request: NextRequest,
@@ -101,27 +180,32 @@ async function proxyRequest(
       headers['Authorization'] = authHeader;
     }
 
-    // Make request to backend
-    // For HTTPS with self-signed certificates:
-    // 1. NODE_TLS_REJECT_UNAUTHORIZED=0 should be set in Vercel Environment Variables
-    // 2. For Node.js 18+, fetch uses undici which respects NODE_TLS_REJECT_UNAUTHORIZED
-    // 3. If that doesn't work, we may need to use node-fetch or https module directly
-    
-    // Note: Next.js fetch doesn't support custom agents, so we rely on NODE_TLS_REJECT_UNAUTHORIZED
+    // Make request to backend using custom fetch that handles self-signed certificates
     let response: Response;
     try {
-      response = await fetch(backendUrl, {
+      response = await customFetch(backendUrl, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
       });
     } catch (error) {
-      // If fetch fails due to certificate issues, try with node-fetch if available
-      // or provide clearer error message
-      if (error instanceof Error && error.message.includes('certificate')) {
-        console.error('[API Proxy] Certificate error. Make sure NODE_TLS_REJECT_UNAUTHORIZED=0 is set in Vercel environment variables.');
-        throw new Error(`Certificate validation failed. Please set NODE_TLS_REJECT_UNAUTHORIZED=0 in Vercel Environment Variables for production/preview environments.`);
+      // Provide detailed error information
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[API Proxy] Request failed:', {
+        url: backendUrl,
+        method,
+        error: errorMessage,
+        isVercel,
+        tlsRejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED,
+      });
+      
+      // Check for specific error types
+      if (errorMessage.includes('certificate') || errorMessage.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE')) {
+        throw new Error(`Certificate validation failed. The backend uses a self-signed certificate. Ensure NODE_TLS_REJECT_UNAUTHORIZED=0 is set in Vercel Environment Variables.`);
+      } else if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('timeout')) {
+        throw new Error(`Connection failed. Unable to reach backend at ${backendUrl}. Check if the backend is accessible from Vercel.`);
       }
+      
       throw error;
     }
 

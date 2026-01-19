@@ -6,6 +6,13 @@ import Providers from "@/components/Providers";
 export const metadata: Metadata = {
   title: "Somalia Master Health Facility Registry",
   description: "Comprehensive registry of health facilities in Somalia.",
+  icons: {
+    icon: [
+      { url: '/applogo.jpeg', type: 'image/jpeg' },
+    ],
+    shortcut: '/applogo.jpeg',
+    apple: '/applogo.jpeg',
+  },
 };
 
 export default function RootLayout({

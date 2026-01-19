@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, user, logout } = useAuth();
 
@@ -37,22 +38,43 @@ export default function Header() {
     <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 1000, width: '100%' }}>
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '80px' }}>
         {/* Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
             <div style={{ 
-                width: '40px', 
-                height: '40px', 
-                background: 'var(--primary-500)', 
-                borderRadius: '12px',
+                width: '50px', 
+                height: '50px',
+                flexShrink: 0,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white'
+                justifyContent: 'center'
             }}>
-                <Activity size={24} />
+                {logoError ? (
+                    <div style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        background: 'var(--primary-500)', 
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white'
+                    }}>
+                        <Activity size={24} />
+                    </div>
+                ) : (
+                    <img
+                        src="/applogo.jpeg"
+                        alt="Federal Government of Somalia Logo"
+                        width={50}
+                        height={50}
+                        style={{ objectFit: 'contain', maxWidth: '100%', height: 'auto' }}
+                        onError={() => setLogoError(true)}
+                        onLoad={() => setLogoError(false)}
+                    />
+                )}
             </div>
             <div>
-                <h1 style={{ fontSize: '1.25rem', color: 'var(--primary-800)' }}>SMHF</h1>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500, letterSpacing: '0.05em' }}>SOMALIA REGISTRY</p>
+                <h1 style={{ fontSize: '1.25rem', color: 'var(--primary-800)', margin: 0, lineHeight: 1.2 }}>SMHF</h1>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500, letterSpacing: '0.05em', margin: 0 }}>SOMALIA REGISTRY</p>
             </div>
         </Link>
 

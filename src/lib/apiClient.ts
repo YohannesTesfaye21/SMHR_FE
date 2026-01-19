@@ -4,26 +4,35 @@ import axios from 'axios';
 // The proxy routes will forward requests to the backend API server
 // Always use relative URLs on client side to hit Next.js proxy (HTTPS)
 function getBaseURL() {
-  // Client-side: always use empty string for relative URLs (hits Next.js proxy)
+  // Client-side: ALWAYS use empty string for relative URLs (hits Next.js proxy)
+  // This prevents mixed content errors (HTTPS page requesting HTTP resources)
   if (typeof window !== 'undefined') {
     return '';
   }
-  // Server-side: use direct backend URL
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://144.91.86.199:8080';
+  // Server-side: use direct backend URL (server-to-server calls can use HTTP)
+  return process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://144.91.86.199:8080';
 }
 
+// Create axios instance with dynamic baseURL
+// Note: baseURL is set at creation time, but we ensure it's empty on client
+const baseURL = getBaseURL();
 const apiClient = axios.create({
-  baseURL: getBaseURL(),
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token if available
+// Request interceptor: ensure baseURL is empty on client and add auth token
 apiClient.interceptors.request.use(
   (config) => {
     // Only run on client side
     if (typeof window !== 'undefined') {
+      // Force empty baseURL on client side to prevent mixed content errors
+      // This ensures all client requests go through Next.js proxy (HTTPS)
+      config.baseURL = '';
+      
+      // Add auth token if available
       const token = localStorage.getItem('auth_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;

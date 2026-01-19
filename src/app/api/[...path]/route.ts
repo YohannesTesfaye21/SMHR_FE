@@ -48,12 +48,16 @@ async function proxyRequest(
   method: string
 ) {
   try {
+    // Remove 'api' prefix if present (since route is already /api/[...path])
+    const cleanPath = pathSegments[0] === 'api' 
+      ? pathSegments.slice(1).join('/')
+      : pathSegments.join('/');
+    
     // Construct the backend URL
-    const path = pathSegments.join('/');
     const searchParams = request.nextUrl.searchParams.toString();
-    const backendUrl = `${BACKEND_API_URL}/api/${path}${searchParams ? `?${searchParams}` : ''}`;
+    const backendUrl = `${BACKEND_API_URL}/api/${cleanPath}${searchParams ? `?${searchParams}` : ''}`;
 
-    console.log(`[API Proxy] ${method} ${path} -> ${backendUrl}`);
+    console.log(`[API Proxy] ${method} ${cleanPath} -> ${backendUrl}`);
 
     // Get request body if present
     let body = null;

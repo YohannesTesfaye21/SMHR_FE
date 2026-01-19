@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Building2, MapPin, Award, ChevronDown, ChevronUp, Layers, Search, RotateCw, Map } from 'lucide-react';
-import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, AreaChart, Area, Treemap } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, AreaChart, Area } from 'recharts';
 import { useDashboardCards, useDashboardCharts, useDashboardStateStats, useTopRegions } from '@/hooks/useDashboard';
 import { StateStatisticsDTO } from '@/types/apiTypes';
 
@@ -99,7 +99,8 @@ function SummaryCard({ title, value, icon, color, delay = 0 }: { title: string; 
     <div
       className="glass-premium shadow-premium"
       style={{
-        padding: '1.5rem',
+        padding: '2rem',
+        minHeight: '140px',
         borderRadius: '20px',
         opacity: 0,
         animation: `fadeInUp 0.6s ease-out ${delay}s forwards`,
@@ -121,8 +122,8 @@ function SummaryCard({ title, value, icon, color, delay = 0 }: { title: string; 
       }} />
 
       <div style={{
-        width: '60px',
-        height: '60px',
+        width: '70px',
+        height: '70px',
         borderRadius: '16px',
         background: `linear-gradient(135deg, ${color[0]}, ${color[1]})`,
         display: 'flex',
@@ -131,14 +132,14 @@ function SummaryCard({ title, value, icon, color, delay = 0 }: { title: string; 
         boxShadow: `0 8px 16px -4px ${color[0]}50`,
         flexShrink: 0,
       }}>
-        {React.cloneElement(icon as React.ReactElement, { color: 'white', size: 28 })}
+        {React.cloneElement(icon as React.ReactElement, { color: 'white', size: 32 })}
       </div>
 
-      <div>
-        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem', fontWeight: 500 }}>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 0.75rem', fontWeight: 500 }}>
           {title}
         </p>
-        <h3 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--gray-900)' }}>
+        <h3 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: 'var(--gray-900)', lineHeight: 1.2 }}>
           <AnimatedCounter end={value || 0} />
         </h3>
       </div>
@@ -440,13 +441,6 @@ export default function StatsDashboard() {
     s.stateName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Fallback for treemap (using state stats if no specific api)
-  const treemapData = stateStats.map((stat, idx) => ({
-    name: stat.stateName,
-    size: stat.totalFacilities,
-    fill: COLORS.primary[idx % COLORS.primary.length],
-  }));
-
   // Fallback for Trend (Area Chart) - Simulated based on real data
   const trendData = stateStats.map(stat => ({
     name: stat.stateCode || stat.stateName.substring(0, 3).toUpperCase(),
@@ -745,47 +739,6 @@ export default function StatsDashboard() {
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* Treemap */}
-        <ChartCard title="🗺️ Facility Landscape" delay={0.5}>
-          <ResponsiveContainer width="100%" height={280}>
-            <Treemap
-              data={treemapData}
-              dataKey="size"
-              aspectRatio={4/3}
-              stroke="white"
-              animationDuration={500}
-              content={({ x, y, width, height, name, fill }: any) => (
-                <g>
-                  <rect
-                    x={x}
-                    y={y}
-                    width={width}
-                    height={height}
-                    fill={fill}
-                    rx={4}
-                    style={{ 
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
-                      transition: 'opacity 0.2s',
-                    }}
-                  />
-                  {width > 40 && height > 30 && (
-                    <text
-                      x={x + width / 2}
-                      y={y + height / 2}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill="white"
-                      fontSize={width > 80 ? 12 : 10}
-                      fontWeight={600}
-                    >
-                      {name}
-                    </text>
-                  )}
-                </g>
-              )}
-            />
-          </ResponsiveContainer>
-        </ChartCard>
       </div>
 
       {/* Regional Breakdown Section */}

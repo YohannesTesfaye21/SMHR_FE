@@ -12,28 +12,8 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Runtime check: Ensure we never use HTTP URLs on client (prevents Mixed Content errors)
-if (typeof window !== 'undefined') {
-  // Override axios adapter to catch any HTTP URLs before they're sent
-  const originalAdapter = apiClient.defaults.adapter || axios.defaults.adapter;
-  apiClient.defaults.adapter = async (config) => {
-    const fullUrl = config.baseURL 
-      ? `${config.baseURL}${config.url || ''}` 
-      : config.url || '';
-    
-    // Block any HTTP URLs on client side
-    if (fullUrl.startsWith('http://')) {
-      console.error('[apiClient] BLOCKED: HTTP URL detected on client side!', {
-        fullUrl,
-        baseURL: config.baseURL,
-        url: config.url,
-      });
-      throw new Error('Mixed Content Error: HTTP URLs are not allowed on client side. All requests must use relative URLs through /api/ proxy.');
-    }
-    
-    return originalAdapter!(config);
-  };
-}
+// Note: HTTP URL blocking is handled in the request interceptor below
+// This is more reliable than overriding the adapter
 
 // Request interceptor: Handle baseURL and auth token
 apiClient.interceptors.request.use(
@@ -85,16 +65,29 @@ apiClient.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
       
-      // Log warning if we detect HTTP URLs (should never happen on client)
+      // CRITICAL: Block HTTP URLs on client side (prevents Mixed Content errors)
       if (config.baseURL?.startsWith('http://') || config.url?.startsWith('http://')) {
+        const errorMsg = 'Mixed Content Error: HTTP URLs are not allowed on client side. All requests must use relative URLs through /api/ proxy.';
         console.error('[apiClient] ERROR: HTTP URL detected on client side!', {
           baseURL: config.baseURL,
           url: config.url,
         });
+        
         // Force to empty to prevent Mixed Content errors
         config.baseURL = '';
         if (config.url?.startsWith('http://')) {
-          config.url = config.url.replace(/^http:\/\/[^\/]+/, '');
+          // Try to extract path from HTTP URL
+          try {
+            const urlObj = new URL(config.url);
+            config.url = urlObj.pathname + urlObj.search;
+          } catch {
+            config.url = config.url.replace(/^http:\/\/[^\/]+/, '');
+          }
+          
+          // If we still have an HTTP URL after cleanup, throw error
+          if (config.url.startsWith('http://')) {
+            throw new Error(errorMsg);
+          }
         }
       }
     } else {

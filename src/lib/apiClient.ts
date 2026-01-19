@@ -10,12 +10,19 @@ let apiClient: AxiosInstance;
 
 if (typeof window !== 'undefined') {
   // CLIENT-SIDE: Always use empty baseURL - requests go through Next.js proxy (HTTPS)
+  // IGNORE any environment variables - they could contain HTTP URLs
+  // Force empty baseURL to prevent mixed content errors
+  const clientBaseURL = ''; // NEVER use env vars or defaults here
+  
   apiClient = axios.create({
-    baseURL: '', // CRITICAL: Empty baseURL forces relative URLs
+    baseURL: clientBaseURL, // CRITICAL: Empty baseURL forces relative URLs
     headers: {
       'Content-Type': 'application/json',
     },
   });
+  
+  // Log for debugging (remove in production if needed)
+  console.log('[apiClient] Initialized client-side with baseURL:', apiClient.defaults.baseURL);
 } else {
   // SERVER-SIDE: Use direct backend URL
   const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
@@ -39,12 +46,19 @@ apiClient.interceptors.request.use(
     // CLIENT-SIDE ONLY: Ensure URLs are always relative (no HTTP/HTTPS)
     if (typeof window !== 'undefined') {
       // CRITICAL: Force empty baseURL on every request (defense in depth)
+      const originalBaseURL = config.baseURL;
       config.baseURL = '';
+      
+      // If baseURL was somehow set, log it for debugging
+      if (originalBaseURL && originalBaseURL !== '') {
+        console.error('[apiClient] WARNING: baseURL was set on client!', originalBaseURL, 'Forcing to empty');
+      }
       
       // Ensure URL is relative (starts with /)
       if (config.url) {
         // Strip any protocol (http:// or https://) from URL
         if (config.url.startsWith('http://') || config.url.startsWith('https://')) {
+          console.error('[apiClient] WARNING: URL contains protocol!', config.url, 'Stripping to make relative');
           try {
             const urlObj = new URL(config.url);
             config.url = urlObj.pathname + urlObj.search;
@@ -68,7 +82,11 @@ apiClient.interceptors.request.use(
       // Final validation: ensure no HTTP URLs make it through
       const finalUrl = (config.baseURL || '') + (config.url || '');
       if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://')) {
-        console.error('[apiClient] ERROR: HTTP/HTTPS URL detected on client!', finalUrl);
+        console.error('[apiClient] ERROR: HTTP/HTTPS URL detected in final URL!', {
+          baseURL: config.baseURL,
+          url: config.url,
+          finalUrl: finalUrl
+        });
         // Force relative URL
         const urlMatch = finalUrl.match(/https?:\/\/[^/]+(\/.*)$/);
         if (urlMatch) {
@@ -76,6 +94,14 @@ apiClient.interceptors.request.use(
         }
         config.baseURL = '';
       }
+      
+      // Log the final config for debugging
+      console.log('[apiClient] Request config:', {
+        method: config.method,
+        baseURL: config.baseURL,
+        url: config.url,
+        finalUrl: (config.baseURL || '') + (config.url || '')
+      });
     } else {
       // SERVER-SIDE: Add auth token from headers if present (SSR)
       // Note: Server-side doesn't have localStorage, so auth must come from headers

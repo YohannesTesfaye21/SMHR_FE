@@ -257,6 +257,9 @@ async function proxyRequest(
   method: string
 ) {
   try {
+    // Log that proxy was called
+    console.log(`[API Proxy] ${method} request received for:`, pathSegments.join('/'));
+    
     // Remove 'api' prefix if present (since route is already /api/[...path])
     const cleanPath = pathSegments[0] === 'api' 
       ? pathSegments.slice(1).join('/')
@@ -323,28 +326,48 @@ async function proxyRequest(
     } catch (error) {
       // Provide detailed error information
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorCode = (error as any)?.code;
+      
       console.error('[API Proxy] Request failed:', {
         url: backendUrl,
         method,
         error: errorMessage,
+        code: errorCode,
         isVercel,
         tlsRejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED,
       });
       
-      // Check for specific error types
+      // Format error message for specific error types
+      let formattedError: string;
       if (errorMessage.includes('certificate') || errorMessage.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE')) {
-        throw new Error(`Certificate validation failed. The backend uses a self-signed certificate. Ensure NODE_TLS_REJECT_UNAUTHORIZED=0 is set in Vercel Environment Variables.`);
-      } else if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND')) {
+        formattedError = `Certificate validation failed. The backend uses a self-signed certificate. Ensure NODE_TLS_REJECT_UNAUTHORIZED=0 is set in Vercel Environment Variables.`;
+      } else if (errorMessage.includes('ECONNREFUSED') || errorCode === 'ECONNREFUSED') {
         if (isHttp) {
-          throw new Error(`HTTP connection failed. Vercel blocks HTTP connections to external IPs for security. Please use HTTPS (set BACKEND_API_URL to https://...) or configure your backend to accept HTTPS connections.`);
+          formattedError = `HTTP connection failed. Vercel blocks HTTP connections to external IPs for security. Please use HTTPS (set BACKEND_API_URL to https://...) or configure your backend to accept HTTPS connections.`;
         } else {
-          throw new Error(`Connection failed. Unable to reach backend at ${backendUrl}. Check if the backend is accessible from Vercel.`);
+          formattedError = `Connection refused. Unable to reach backend at ${BACKEND_API_URL}. Check if the backend is accessible from Vercel's network.`;
         }
-      } else if (errorMessage.includes('timeout')) {
-        throw new Error(`Request timeout. Unable to reach backend at ${backendUrl} within 30 seconds.`);
+      } else if (errorMessage.includes('ENOTFOUND') || errorCode === 'ENOTFOUND') {
+        formattedError = `DNS lookup failed. Unable to resolve backend hostname. Check if ${BACKEND_API_URL} is correct.`;
+      } else if (errorMessage.includes('timeout') || errorCode === 'ETIMEDOUT') {
+        formattedError = `Request timeout. Unable to reach backend at ${backendUrl} within 30 seconds. The backend may be slow or unreachable.`;
+      } else {
+        formattedError = errorMessage;
       }
       
-      throw error;
+      // Return error response immediately (don't throw to outer catch)
+      return NextResponse.json(
+        { 
+          error: 'Proxy request failed', 
+          message: formattedError,
+          details: {
+            backendUrl: BACKEND_API_URL,
+            attemptedUrl: backendUrl,
+            errorCode: errorCode,
+          }
+        },
+        { status: 502 } // Bad Gateway - indicates proxy couldn't reach backend
+      );
     }
 
     // Get response data
@@ -379,7 +402,7 @@ async function proxyRequest(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
     
-    console.error('[API Proxy] Error:', {
+    console.error('[API Proxy] Unexpected error:', {
       message: errorMessage,
       stack: errorStack,
       url: request.url,
@@ -392,19 +415,16 @@ async function proxyRequest(
       },
     });
     
-    // Return detailed error for debugging (in development) or generic error (in production)
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    // Always return a proper JSON response that axios can understand
     return NextResponse.json(
       { 
         error: 'Proxy request failed', 
         message: errorMessage,
-        ...(isDevelopment && { 
-          details: {
-            backendUrl: BACKEND_API_URL,
-            isVercel,
-            stack: errorStack,
-          }
-        })
+        // Include details in production too (helps with debugging on Vercel)
+        details: {
+          backendUrl: BACKEND_API_URL,
+          isVercel,
+        }
       },
       { status: 500 }
     );

@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
+import https from 'https';
 
-const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://144.91.86.199:8080';
+// Use HTTPS API on Vercel (with self-signed certificate), HTTP for local development
+// Detect Vercel environment
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+const defaultBackendURL = isVercel 
+  ? 'https://144.91.86.199:8443'  // HTTPS for Vercel (self-signed cert)
+  : 'http://144.91.86.199:8080';  // HTTP for local development
+
+const BACKEND_API_URL = process.env.BACKEND_API_URL || defaultBackendURL;
+
+// For HTTPS with self-signed certificates, create an agent that accepts unsecured connections
+// IMPORTANT: Set NODE_TLS_REJECT_UNAUTHORIZED=0 in Vercel Environment Variables dashboard
+// This code will also try to set it at runtime, but Vercel may require it as an env var
+if (isVercel && BACKEND_API_URL.startsWith('https://')) {
+  // Try to set it at runtime (may not work on Vercel, so set it in dashboard too)
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
+// Create HTTPS agent for self-signed certificates (alternative approach)
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false // Accept self-signed certificates
+});
 
 export async function GET(
   request: NextRequest,
@@ -81,11 +102,28 @@ async function proxyRequest(
     }
 
     // Make request to backend
-    const response = await fetch(backendUrl, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    // For HTTPS with self-signed certificates:
+    // 1. NODE_TLS_REJECT_UNAUTHORIZED=0 should be set in Vercel Environment Variables
+    // 2. For Node.js 18+, fetch uses undici which respects NODE_TLS_REJECT_UNAUTHORIZED
+    // 3. If that doesn't work, we may need to use node-fetch or https module directly
+    
+    // Note: Next.js fetch doesn't support custom agents, so we rely on NODE_TLS_REJECT_UNAUTHORIZED
+    let response: Response;
+    try {
+      response = await fetch(backendUrl, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (error) {
+      // If fetch fails due to certificate issues, try with node-fetch if available
+      // or provide clearer error message
+      if (error instanceof Error && error.message.includes('certificate')) {
+        console.error('[API Proxy] Certificate error. Make sure NODE_TLS_REJECT_UNAUTHORIZED=0 is set in Vercel environment variables.');
+        throw new Error(`Certificate validation failed. Please set NODE_TLS_REJECT_UNAUTHORIZED=0 in Vercel Environment Variables for production/preview environments.`);
+      }
+      throw error;
+    }
 
     // Get response data
     const data = await response.json().catch(() => ({}));

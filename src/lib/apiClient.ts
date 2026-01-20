@@ -10,6 +10,19 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 const isClientSide = (): boolean => typeof window !== 'undefined';
 const isDevelopment = process.env.NODE_ENV === 'development';
 
+// Helper to get server baseURL - this should NEVER be called on client
+// Always use HTTPS - no HTTP URLs anywhere
+const getServerBaseURL = (): string => {
+  // This function should only run on server
+  if (typeof window !== 'undefined') {
+    throw new Error('getServerBaseURL should never be called on client');
+  }
+  
+  // Use environment variable if set, otherwise use HTTPS default
+  // Always HTTPS - no HTTP URLs in the codebase
+  return process.env.BACKEND_API_URL || 'https://144.91.86.199:8443';
+};
+
 const sanitizeUrlForClient = (url: string | undefined): string => {
   if (!url) return '';
   let sanitized = url.replace(/^https?:\/\/[^\/]+/, '');
@@ -47,6 +60,11 @@ apiClient.interceptors.request.use(
       // Force baseURL to be empty - this is critical for preventing Mixed Content errors
       config.baseURL = '';
       
+      // Also ensure defaults are empty (double protection)
+      if (apiClient.defaults.baseURL) {
+        apiClient.defaults.baseURL = '';
+      }
+      
       // Sanitize URL to ensure it's always relative
       if (config.url) {
         config.url = sanitizeUrlForClient(config.url);
@@ -58,8 +76,16 @@ apiClient.interceptors.request.use(
       const finalURL = String(config.url || '');
       const constructedURL = finalBaseURL + finalURL;
       
-      // Block HTTP URLs in any form
+      // Block HTTP URLs in any form - log in production too for debugging
       if (finalBaseURL.includes('http://') || finalURL.includes('http://') || constructedURL.includes('http://')) {
+        // Log the error in production to help debug
+        console.error('[apiClient] SECURITY ERROR - HTTP URL detected on client:', {
+          baseURL: finalBaseURL,
+          url: finalURL,
+          constructedURL,
+          defaultsBaseURL: apiClient.defaults.baseURL,
+        });
+        
         // Force to relative URLs
         config.baseURL = '';
         config.url = sanitizeUrlForClient(finalURL);
@@ -71,16 +97,14 @@ apiClient.interceptors.request.use(
         
         if (sanitizedFullURL.includes('http://') || sanitizedURL.includes('http://')) {
           const error = new Error('HTTP URL detected on client side. All requests must use relative URLs through /api/ proxy.');
-          if (isDevelopment) {
-            console.error('[apiClient] SECURITY ERROR - HTTP URL blocked:', {
-              originalBaseURL: finalBaseURL,
-              originalURL: finalURL,
-              constructedURL,
-              sanitizedBaseURL,
-              sanitizedURL,
-              sanitizedFullURL,
-            });
-          }
+          console.error('[apiClient] SECURITY ERROR - HTTP URL blocked after sanitization:', {
+            originalBaseURL: finalBaseURL,
+            originalURL: finalURL,
+            constructedURL,
+            sanitizedBaseURL,
+            sanitizedURL,
+            sanitizedFullURL,
+          });
           throw error;
         }
       }
@@ -90,16 +114,28 @@ apiClient.interceptors.request.use(
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      
+      // Log the final URL being used on client (for debugging)
+      const finalUrl = (config.baseURL || '') + (config.url || '');
+      console.log('[apiClient] Client-side request:', {
+        baseURL: config.baseURL,
+        url: config.url,
+        finalUrl,
+        method: config.method,
+      });
     } else {
       // Server-side: Set baseURL for direct backend connection
-      // Only set this when we're 100% sure we're on the server
-      const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
-      const serverBaseURL = process.env.BACKEND_API_URL || 
-        (isVercel 
-          ? 'https://144.91.86.199:8443'
-          : 'http://144.91.86.199:8080');
-      
+      // Use helper function to get server URL (prevents HTTP URL in client bundle)
+      const serverBaseURL = getServerBaseURL();
       config.baseURL = serverBaseURL;
+      
+      // Log server-side request (for debugging)
+      console.log('[apiClient] Server-side request:', {
+        baseURL: serverBaseURL,
+        url: config.url,
+        finalUrl: serverBaseURL + (config.url || ''),
+        method: config.method,
+      });
     }
     
     return config;

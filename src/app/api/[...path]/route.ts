@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Environment detection
-const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
-const isDevelopment = process.env.NODE_ENV === 'development';
-
 // Backend URL configuration
-// Set BACKEND_API_URL in Vercel Environment Variables for production
-const defaultBackendURL = isVercel 
-  ? 'https://144.91.86.199:8443'
-  : 'http://144.91.86.199:8080';
-
-const BACKEND_API_URL = process.env.BACKEND_API_URL || defaultBackendURL;
+// Always use HTTPS - no HTTP URLs
+// Set BACKEND_API_URL in Environment Variables if different
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://144.91.86.199:8443';
 const isHttps = BACKEND_API_URL.startsWith('https://');
 
-// For self-signed certificates, NODE_TLS_REJECT_UNAUTHORIZED must be set to "0" 
-// in Vercel Environment Variables (cannot be set at runtime)
-if (isHttps && !process.env.NODE_TLS_REJECT_UNAUTHORIZED && isDevelopment) {
-  console.warn('[API Proxy] NODE_TLS_REJECT_UNAUTHORIZED not set. Set it to "0" in Vercel Environment Variables for HTTPS with self-signed certs.');
+// Set NODE_TLS_REJECT_UNAUTHORIZED for self-signed certificates
+// This allows connections to backends with self-signed certificates
+if (isHttps) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 }
 
 export async function GET(
@@ -75,14 +68,13 @@ async function proxyRequest(
       return NextResponse.json({
         status: 'ok',
         environment: {
-          isVercel,
           nodeEnv: process.env.NODE_ENV,
           backendApiUrl: BACKEND_API_URL,
           backendApiUrlFromEnv: process.env.BACKEND_API_URL || 'not set (using default)',
           nodeTlsRejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED || 'not set',
           isHttps,
         },
-        message: 'API Proxy is configured. Check backendApiUrl and nodeTlsRejectUnauthorized values.',
+        message: 'API Proxy is configured.',
       });
     }
     
@@ -90,9 +82,14 @@ async function proxyRequest(
     const searchParams = request.nextUrl.searchParams.toString();
     const backendUrl = `${BACKEND_API_URL}/api/${cleanPath}${searchParams ? `?${searchParams}` : ''}`;
 
-    if (isDevelopment) {
-      console.log(`[API Proxy] ${method} ${cleanPath} -> ${backendUrl}`);
-    }
+    // Always log the full API path for debugging
+    console.log(`[API Proxy] ${method} Request:`, {
+      cleanPath,
+      fullBackendUrl: backendUrl,
+      baseUrl: BACKEND_API_URL,
+      searchParams: searchParams || 'none',
+      nodeTlsRejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED || 'not set',
+    });
 
     // Get request body
     let body = null;
@@ -122,6 +119,7 @@ async function proxyRequest(
       const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       try {
+        // Native fetch should respect NODE_TLS_REJECT_UNAUTHORIZED when set
         response = await fetch(backendUrl, {
           method,
           headers,
@@ -135,19 +133,17 @@ async function proxyRequest(
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const errorCode = (error as any)?.code;
       
-      if (isDevelopment) {
-        console.error('[API Proxy] Request failed:', {
-          url: backendUrl,
-          method,
-          error: errorMessage,
-          code: errorCode,
-        });
-      }
+      console.error('[API Proxy] Request failed:', {
+        url: backendUrl,
+        method,
+        error: errorMessage,
+        code: errorCode,
+      });
       
       // Format error message
       let formattedError: string;
       if (errorMessage.includes('certificate') || errorMessage.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE')) {
-        formattedError = 'Certificate validation failed. Ensure NODE_TLS_REJECT_UNAUTHORIZED=0 is set in Vercel Environment Variables.';
+        formattedError = 'Certificate validation failed. The backend uses a self-signed certificate.';
       } else if (errorMessage.includes('ECONNREFUSED') || errorCode === 'ECONNREFUSED') {
         formattedError = `Connection refused. Unable to reach backend at ${BACKEND_API_URL}. Check if the backend is accessible.`;
       } else if (errorMessage.includes('ENOTFOUND') || errorCode === 'ENOTFOUND') {
@@ -162,13 +158,6 @@ async function proxyRequest(
         { 
           error: 'Proxy request failed', 
           message: formattedError,
-          ...(isDevelopment && {
-            details: {
-              backendUrl: BACKEND_API_URL,
-              attemptedUrl: backendUrl,
-              errorCode: errorCode,
-            }
-          })
         },
         { status: 502 }
       );
@@ -182,9 +171,7 @@ async function proxyRequest(
       try {
         data = await response.json();
       } catch (error) {
-        if (isDevelopment) {
-          console.error('[API Proxy] Failed to parse JSON response:', error);
-        }
+        console.error('[API Proxy] Failed to parse JSON response:', error);
         data = { error: 'Invalid JSON response from backend' };
       }
     } else {
@@ -205,25 +192,17 @@ async function proxyRequest(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
-    if (isDevelopment) {
-      console.error('[API Proxy] Unexpected error:', {
-        message: errorMessage,
-        url: request.url,
-        method,
-        backendUrl: BACKEND_API_URL,
-      });
-    }
+    console.error('[API Proxy] Unexpected error:', {
+      message: errorMessage,
+      url: request.url,
+      method,
+      backendUrl: BACKEND_API_URL,
+    });
     
     return NextResponse.json(
       { 
         error: 'Proxy request failed', 
         message: errorMessage,
-        ...(isDevelopment && {
-          details: {
-            backendUrl: BACKEND_API_URL,
-            isVercel,
-          }
-        })
       },
       { status: 500 }
     );

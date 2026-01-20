@@ -1,0 +1,16 @@
+# Netlify configuration for Next.js with API routes
+# IMPORTANT: This keeps your API routes working (unlike static export)
+
+[build]
+  command = "npm run build"
+  # Next.js builds to .next, but Netlify will handle it with the plugin
+  publish = ".next"
+
+# Use Netlify's Next.js plugin for proper serverless function handling
+# This plugin automatically converts your API routes to Netlify Functions
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Required environment variables (set these in Netlify dashboard):
+# - BACKEND_API_URL = "https://144.91.86.199:8443"
+# - NODE_TLS_REJECT_UNAUTHORIZED = "0"

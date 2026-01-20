@@ -59,8 +59,7 @@ Configure these in your Vercel project settings (**Settings** → **Environment 
 2. **`BACKEND_API_URL`** (Optional but recommended)
    - Value: Your backend API URL
    - Example: `https://144.91.86.199:8443`
-   - If not set, defaults to `https://144.91.86.199:8443` on Vercel
-   - For local development, defaults to `http://144.91.86.199:8080`
+   - If not set, defaults to `https://144.91.86.199:8443` (always HTTPS)
 
 ### Deployment Steps
 

@@ -123,6 +123,12 @@ apiClient.interceptors.request.use(
         finalUrl,
         method: config.method,
       });
+      
+      // CRITICAL: Final check - if HTTP is detected, throw immediately
+      if (finalUrl.includes('http://')) {
+        console.error('[apiClient] FATAL: HTTP URL in final constructed URL:', finalUrl);
+        throw new Error(`FATAL: HTTP URL detected in final URL: ${finalUrl}`);
+      }
     } else {
       // Server-side: Set baseURL for direct backend connection
       // Use helper function to get server URL (prevents HTTP URL in client bundle)

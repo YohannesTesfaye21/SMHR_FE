@@ -7,7 +7,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import Link from 'next/link';
 import { HealthFacilityDTO } from '@/types/apiTypes';
-import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 // Generate a consistent color from a string (state name)
 function stringToColor(str: string): string {
@@ -68,7 +68,7 @@ interface FacilitiesMapProps {
 }
 
 export default function FacilitiesMap({ facilities }: FacilitiesMapProps) {
-    const [legendOpen, setLegendOpen] = useState(true);
+    const [selectedStates, setSelectedStates] = useState<Set<string>>(new Set());
 
     // Default center (Somalia approx)
     const defaultCenter: [number, number] = [5.1521, 46.1996];
@@ -90,170 +90,242 @@ export default function FacilitiesMap({ facilities }: FacilitiesMapProps) {
         return new Map([...statesMap.entries()].sort((a, b) => a[0].localeCompare(b[0])));
     }, [validFacilities]);
 
+    // Calculate facility count per state
+    const stateFacilityCounts = useMemo(() => {
+        const counts = new Map<string, number>();
+        validFacilities.forEach(facility => {
+            const stateName = facility.district?.region?.state?.stateName;
+            if (stateName) {
+                counts.set(stateName, (counts.get(stateName) || 0) + 1);
+            }
+        });
+        return counts;
+    }, [validFacilities]);
+
+    // Filter facilities based on selected states
+    const filteredFacilities = useMemo(() => {
+        if (selectedStates.size === 0) {
+            return validFacilities;
+        }
+        return validFacilities.filter(facility => {
+            const stateName = facility.district?.region?.state?.stateName;
+            return stateName && selectedStates.has(stateName);
+        });
+    }, [validFacilities, selectedStates]);
+
     // Get color for a facility based on its state
     const getFacilityColor = (facility: HealthFacilityDTO): string => {
         const stateName = facility.district?.region?.state?.stateName;
         return stateName ? (stateColors.get(stateName) || '#3b82f6') : '#3b82f6';
     };
 
+    // Toggle state selection
+    const toggleState = (stateName: string) => {
+        setSelectedStates(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(stateName)) {
+                newSet.delete(stateName);
+            } else {
+                newSet.add(stateName);
+            }
+            return newSet;
+        });
+    };
+
     return (
-        <div style={{ height: '600px', width: '100%', borderRadius: '16px', overflow: 'hidden', position: 'relative', zIndex: 0, border: '1px solid var(--border-color)' }}>
-            <MapContainer 
-                center={defaultCenter} 
-                zoom={6} 
-                scrollWheelZoom={true}
-                style={{ height: '100%', width: '100%' }}
-            >
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                
-                <MarkerClusterGroup
-                    chunkedLoading
-                    maxClusterRadius={50}
-                    spiderfyOnMaxZoom={true}
-                    showCoverageOnHover={false}
-                    zoomToBoundsOnClick={true}
-                >
-                    {validFacilities.map((facility) => {
-                        const color = getFacilityColor(facility);
-                        const icon = createColoredIcon(color);
-                        
-                        return (
-                            <Marker 
-                                key={facility.healthFacilityId} 
-                                position={[facility.latitude!, facility.longitude!]}
-                                icon={icon}
-                            >
-                                <Popup>
-                                    <div style={{ padding: '4px', minWidth: '200px' }}>
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '6px' }}>
-                                            {facility.healthFacilityName}
-                                        </div>
-                                        <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '4px' }}>
-                                            {facility.facilityType?.typeName}
-                                        </div>
-                                        {facility.district?.region?.state?.stateName && (
-                                            <div style={{ 
-                                                fontSize: '0.8rem', 
-                                                color: '#888',
-                                                marginBottom: '8px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px'
-                                            }}>
-                                                <div style={{
-                                                    width: '12px',
-                                                    height: '12px',
-                                                    borderRadius: '50%',
-                                                    background: color,
-                                                    border: '2px solid white',
-                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                                                }} />
-                                                {facility.district.region.state.stateName}
-                                            </div>
-                                        )}
-                                        <Link 
-                                            href={`/facilities/${facility.healthFacilityId}`}
-                                            style={{ 
-                                                display: 'inline-flex', 
-                                                alignItems: 'center', 
-                                                gap: '4px',
-                                                fontSize: '0.85rem',
-                                                color: '#2563eb',
-                                                fontWeight: 500,
-                                                textDecoration: 'none'
-                                            }}
-                                        >
-                                            View Details <ArrowRight size={14} />
-                                        </Link>
-                                    </div>
-                                </Popup>
-                            </Marker>
-                        );
-                    })}
-                </MarkerClusterGroup>
-
-                <MapBounds facilities={validFacilities} />
-            </MapContainer>
-
-            {/* Legend */}
+        <div style={{ width: '100%' }}>
+            {/* Horizontal State Filter Bar */}
             {stateColors.size > 0 && (
                 <div style={{
-                    position: 'absolute',
-                    bottom: '20px',
-                    right: '20px',
+                    marginBottom: '1rem',
                     background: 'white',
                     borderRadius: '12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    zIndex: 1000,
-                    maxWidth: '280px',
-                    overflow: 'hidden'
+                    padding: '1rem',
+                    border: '1px solid var(--border-color)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                 }}>
-                    <div 
-                        onClick={() => setLegendOpen(!legendOpen)}
-                        style={{
-                            padding: '12px 16px',
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white',
-                            fontWeight: 600,
-                            fontSize: '0.9rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            userSelect: 'none'
-                        }}
-                    >
-                        <span>States ({stateColors.size})</span>
-                        {legendOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    {/* Header */}
+                    <div style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#374151',
+                        marginBottom: '0.75rem'
+                    }}>
+                        Filter by State {selectedStates.size > 0 && (
+                            <span style={{ 
+                                color: '#667eea',
+                                fontSize: '0.85rem',
+                                fontWeight: 500,
+                                marginLeft: '0.5rem'
+                            }}>
+                                ({selectedStates.size} selected)
+                            </span>
+                        )}
                     </div>
-                    
-                    {legendOpen && (
-                        <div style={{
-                            padding: '12px',
-                            maxHeight: '300px',
-                            overflowY: 'auto'
-                        }}>
-                            {Array.from(stateColors.entries()).map(([stateName, color]) => (
+
+                    {/* Horizontal scrollable state chips */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '8px',
+                        overflowX: 'auto',
+                        paddingBottom: '4px',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#cbd5e1 #f1f5f9'
+                    }}>
+                        {Array.from(stateColors.entries()).map(([stateName, color]) => {
+                            const isSelected = selectedStates.has(stateName);
+                            const facilityCount = stateFacilityCounts.get(stateName) || 0;
+                            
+                            return (
                                 <div 
                                     key={stateName}
+                                    onClick={() => toggleState(stateName)}
                                     style={{
-                                        display: 'flex',
+                                        display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: '10px',
-                                        padding: '6px 8px',
-                                        borderRadius: '6px',
-                                        marginBottom: '4px',
-                                        transition: 'background 0.2s',
-                                        cursor: 'default'
+                                        gap: '8px',
+                                        padding: '8px 14px',
+                                        borderRadius: '20px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        background: isSelected ? '#667eea' : '#f9fafb',
+                                        border: isSelected ? '2px solid #667eea' : '2px solid #e5e7eb',
+                                        whiteSpace: 'nowrap',
+                                        flexShrink: 0
                                     }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                    onMouseEnter={(e) => {
+                                        if (!isSelected) {
+                                            e.currentTarget.style.background = '#f3f4f6';
+                                            e.currentTarget.style.borderColor = '#cbd5e1';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isSelected) {
+                                            e.currentTarget.style.background = '#f9fafb';
+                                            e.currentTarget.style.borderColor = '#e5e7eb';
+                                        }
+                                    }}
                                 >
+                                    {/* Color indicator */}
                                     <div style={{
-                                        width: '16px',
-                                        height: '16px',
+                                        width: '12px',
+                                        height: '12px',
                                         borderRadius: '50%',
-                                        background: color,
-                                        border: '2px solid white',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                        background: isSelected ? 'white' : color,
+                                        border: isSelected ? 'none' : '2px solid white',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                                         flexShrink: 0
                                     }} />
+
+                                    {/* State name */}
                                     <span style={{
                                         fontSize: '0.85rem',
-                                        color: '#374151',
-                                        fontWeight: 500
+                                        color: isSelected ? 'white' : '#374151',
+                                        fontWeight: isSelected ? 600 : 500
                                     }}>
                                         {stateName}
                                     </span>
+
+                                    {/* Facility count badge */}
+                                    <span style={{
+                                        padding: '2px 8px',
+                                        borderRadius: '10px',
+                                        background: isSelected ? 'rgba(255,255,255,0.25)' : '#e5e7eb',
+                                        color: isSelected ? 'white' : '#6b7280',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 600
+                                    }}>
+                                        {facilityCount}
+                                    </span>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            );
+                        })}
+                    </div>
                 </div>
             )}
+
+            {/* Map Container */}
+            <div style={{ height: '600px', width: '100%', borderRadius: '16px', overflow: 'hidden', position: 'relative', zIndex: 0, border: '1px solid var(--border-color)' }}>
+                <MapContainer 
+                    center={defaultCenter} 
+                    zoom={6} 
+                    scrollWheelZoom={true}
+                    style={{ height: '100%', width: '100%' }}
+                >
+                    <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    
+                    <MarkerClusterGroup
+                        chunkedLoading
+                        maxClusterRadius={50}
+                        spiderfyOnMaxZoom={true}
+                        showCoverageOnHover={false}
+                        zoomToBoundsOnClick={true}
+                    >
+                        {filteredFacilities.map((facility) => {
+                            const color = getFacilityColor(facility);
+                            const icon = createColoredIcon(color);
+                            
+                            return (
+                                <Marker 
+                                    key={facility.healthFacilityId} 
+                                    position={[facility.latitude!, facility.longitude!]}
+                                    icon={icon}
+                                >
+                                    <Popup>
+                                        <div style={{ padding: '4px', minWidth: '200px' }}>
+                                            <div style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '6px' }}>
+                                                {facility.healthFacilityName}
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '4px' }}>
+                                                {facility.facilityType?.typeName}
+                                            </div>
+                                            {facility.district?.region?.state?.stateName && (
+                                                <div style={{ 
+                                                    fontSize: '0.8rem', 
+                                                    color: '#888',
+                                                    marginBottom: '8px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px'
+                                                }}>
+                                                    <div style={{
+                                                        width: '12px',
+                                                        height: '12px',
+                                                        borderRadius: '50%',
+                                                        background: color,
+                                                        border: '2px solid white',
+                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                                    }} />
+                                                    {facility.district.region.state.stateName}
+                                                </div>
+                                            )}
+                                            <Link 
+                                                href={`/facilities/${facility.healthFacilityId}`}
+                                                style={{ 
+                                                    display: 'inline-flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '4px',
+                                                    fontSize: '0.85rem',
+                                                    color: '#2563eb',
+                                                    fontWeight: 500,
+                                                    textDecoration: 'none'
+                                                }}
+                                            >
+                                                View Details <ArrowRight size={14} />
+                                            </Link>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            );
+                        })}
+                    </MarkerClusterGroup>
+
+                    <MapBounds facilities={filteredFacilities} />
+                </MapContainer>
+            </div>
         </div>
     );
 }

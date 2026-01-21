@@ -251,22 +251,46 @@ export default function AdminPage() {
               />
             </div>
           </div>
-          <button
-            onClick={handleCreate}
-            className="btn-primary"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.75rem 1.5rem',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              alignSelf: 'flex-start'
-            }}
-          >
-            <Plus size={20} />
-            Post New Facility
-          </button>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button
+                onClick={() => router.push('/admin/facilities/import')}
+                className="btn-secondary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  alignSelf: 'flex-start',
+                  background: 'white',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  color: 'var(--gray-700)',
+                  fontWeight: 500,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Plus size={20} />
+                Bulk Import
+              </button>
+              <button
+                onClick={handleCreate}
+                className="btn-primary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  alignSelf: 'flex-start'
+                }}
+              >
+                <Plus size={20} />
+                Post New Facility
+              </button>
+            </div>
         </div>
 
         {/* Facilities Table */}

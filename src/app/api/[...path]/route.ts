@@ -91,39 +91,38 @@ async function proxyRequest(
       nodeTlsRejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED || 'not set',
     });
 
-    // Get request body
-    let body = null;
+    // Prepare headers - forward essential headers from original request
+    const headers: HeadersInit = {};
+    const headersToForward = ['content-type', 'authorization', 'accept'];
+    
+    headersToForward.forEach(headerName => {
+      const value = request.headers.get(headerName);
+      if (value) {
+        headers[headerName] = value;
+      }
+    });
+
+    // Get request body as ArrayBuffer to support binary data (like files)
+    let body: any = undefined;
     if (method !== 'GET' && method !== 'DELETE') {
       try {
-        body = await request.json();
-      } catch {
-        // No body or not JSON
+        body = await request.arrayBuffer();
+      } catch (error) {
+        console.error('[API Proxy] Failed to read request body:', error);
       }
-    }
-
-    // Prepare headers
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-
-    // Forward Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
     }
 
     // Make request to backend with timeout
     let response: Response;
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout for large files
       
       try {
-        // Native fetch should respect NODE_TLS_REJECT_UNAUTHORIZED when set
         response = await fetch(backendUrl, {
           method,
           headers,
-          body: body ? JSON.stringify(body) : undefined,
+          body: body,
           signal: controller.signal,
         });
       } finally {

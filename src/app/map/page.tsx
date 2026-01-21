@@ -82,52 +82,6 @@ export default function MapPage() {
              <FacilitiesMap facilities={facilities} />
           )}
         </div>
-
-        {/* Legend */}
-        <div className="glass" style={{ 
-          marginTop: '2rem', 
-          padding: '1.5rem', 
-          borderRadius: '16px', 
-          background: 'white',
-          display: 'flex',
-          gap: '2rem',
-          flexWrap: 'wrap',
-          justifyContent: 'center'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ 
-              width: '20px', 
-              height: '20px', 
-              borderRadius: '50%', 
-              background: '#22c55e',
-              border: '2px solid white',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            }} />
-            <span style={{ fontSize: '0.9rem', color: 'var(--gray-700)' }}>Operational</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ 
-              width: '20px', 
-              height: '20px', 
-              borderRadius: '50%', 
-              background: '#ef4444',
-              border: '2px solid white',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            }} />
-            <span style={{ fontSize: '0.9rem', color: 'var(--gray-700)' }}>Closed</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ 
-              width: '20px', 
-              height: '20px', 
-              borderRadius: '50%', 
-              background: '#f59e0b',
-              border: '2px solid white',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            }} />
-            <span style={{ fontSize: '0.9rem', color: 'var(--gray-700)' }}>Pending</span>
-          </div>
-        </div>
       </div>
     </div>
   );

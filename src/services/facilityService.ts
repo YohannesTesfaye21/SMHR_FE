@@ -11,7 +11,15 @@ import {
   ChartDataListApiResponse,
   StateStatisticsListApiResponse,
   TopRegionListApiResponse,
-  ApiResponse
+  ApiResponse,
+  StateApiResponse,
+  RegionApiResponse,
+  DistrictApiResponse,
+  FacilityTypeApiResponse,
+  State,
+  Region,
+  District,
+  FacilityType
 } from '@/types/apiTypes';
 
 export const facilityService = {
@@ -81,5 +89,49 @@ export const facilityService = {
 
   deleteAllFacilities: async () => {
     return apiClient.delete<any, any>('/api/HealthFacilities/all');
+  },
+
+  // State CRUD
+  createState: async (data: Partial<State>) => {
+    return apiClient.post<any, StateApiResponse>('/api/LookupTables/states', data);
+  },
+  updateState: async (id: number, data: Partial<State>) => {
+    return apiClient.put<any, ApiResponse<null>>(`/api/LookupTables/states/${id}`, data);
+  },
+  deleteState: async (id: number) => {
+    return apiClient.delete<any, ApiResponse<null>>(`/api/LookupTables/states/${id}`);
+  },
+
+  // Region CRUD
+  createRegion: async (data: Partial<Region>) => {
+    return apiClient.post<any, RegionApiResponse>('/api/LookupTables/regions', data);
+  },
+  updateRegion: async (id: number, data: Partial<Region>) => {
+    return apiClient.put<any, ApiResponse<null>>(`/api/LookupTables/regions/${id}`, data);
+  },
+  deleteRegion: async (id: number) => {
+    return apiClient.delete<any, ApiResponse<null>>(`/api/LookupTables/regions/${id}`);
+  },
+
+  // District CRUD
+  createDistrict: async (data: Partial<District>) => {
+    return apiClient.post<any, DistrictApiResponse>('/api/LookupTables/districts', data);
+  },
+  updateDistrict: async (id: number, data: Partial<District>) => {
+    return apiClient.put<any, ApiResponse<null>>(`/api/LookupTables/districts/${id}`, data);
+  },
+  deleteDistrict: async (id: number) => {
+    return apiClient.delete<any, ApiResponse<null>>(`/api/LookupTables/districts/${id}`);
+  },
+
+  // Facility Type CRUD
+  createFacilityType: async (data: Partial<FacilityType>) => {
+    return apiClient.post<any, FacilityTypeApiResponse>('/api/LookupTables/facility-types', data);
+  },
+  updateFacilityType: async (id: number, data: Partial<FacilityType>) => {
+    return apiClient.put<any, ApiResponse<null>>(`/api/LookupTables/facility-types/${id}`, data);
+  },
+  deleteFacilityType: async (id: number) => {
+    return apiClient.delete<any, ApiResponse<null>>(`/api/LookupTables/facility-types/${id}`);
   }
 };

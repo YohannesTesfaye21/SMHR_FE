@@ -15,7 +15,7 @@ export default function AdminPage() {
   const { showNotification } = useNotification();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortField, setSortField] = useState<'name' | 'date' | null>(null);

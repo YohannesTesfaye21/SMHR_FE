@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Activity, User, LogOut, ChevronDown } from 'lucide-react';
+import { Menu, X, Activity, User, LogOut, ChevronDown, MapPin } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Header() {
@@ -196,6 +196,30 @@ export default function Header() {
                                 >
                                     <Activity size={16} />
                                     <span>Admin Dashboard</span>
+                                </Link>
+                                <Link
+                                    href="/admin/lookups"
+                                    onClick={() => setProfileMenuOpen(false)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.75rem 1rem',
+                                        borderRadius: '8px',
+                                        color: 'var(--gray-700)',
+                                        textDecoration: 'none',
+                                        fontSize: '0.9rem',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'var(--gray-50)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent';
+                                    }}
+                                >
+                                    <MapPin size={16} />
+                                    <span>Lookup Management</span>
                                 </Link>
                                 <button
                                     onClick={handleLogout}

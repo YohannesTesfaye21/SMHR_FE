@@ -38,3 +38,10 @@ export const useFacilityTypes = () => {
     queryFn: () => facilityService.getFacilityTypes(),
   });
 };
+
+export const useStates = () => {
+  return useQuery({
+    queryKey: ['states'],
+    queryFn: () => facilityService.getStates(),
+  });
+};

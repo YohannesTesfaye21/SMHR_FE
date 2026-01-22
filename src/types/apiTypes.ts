@@ -91,6 +91,11 @@ export type DistrictApiPagedResponse = ApiResponse<PagedResponse<District>>;
 export type FacilityTypeApiPagedResponse = ApiResponse<PagedResponse<FacilityType>>;
 export type StateApiPagedResponse = ApiResponse<PagedResponse<State>>;
 
+export type StateApiResponse = ApiResponse<State>;
+export type RegionApiResponse = ApiResponse<Region>;
+export type DistrictApiResponse = ApiResponse<District>;
+export type FacilityTypeApiResponse = ApiResponse<FacilityType>;
+
 // Dashboard Types
 export interface CardDataDTO {
   totalStates: number;

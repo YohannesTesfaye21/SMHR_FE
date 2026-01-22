@@ -43,6 +43,45 @@ function createColoredIcon(color: string): L.DivIcon {
     });
 }
 
+// Custom cluster icon for better visibility
+const createClusterCustomIcon = (cluster: any) => {
+    const count = cluster.getChildCount();
+    let size = 40;
+    let fontSize = 14;
+
+    if (count > 100) {
+        size = 50;
+        fontSize = 16;
+    } else if (count > 50) {
+        size = 45;
+        fontSize = 15;
+    }
+
+    return L.divIcon({
+        html: `
+            <div style="
+                background: #667eea;
+                color: white;
+                width: ${size}px;
+                height: ${size}px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                border: 3px solid rgba(255, 255, 255, 0.8);
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                font-family: inherit;
+                font-weight: 700;
+                font-size: ${fontSize}px;
+            ">
+                ${count}
+            </div>
+        `,
+        className: 'custom-cluster-icon',
+        iconSize: L.point(size, size, true),
+    });
+};
+
 function MapBounds({ facilities }: { facilities: HealthFacilityDTO[] }) {
     const map = useMap();
 
@@ -263,6 +302,7 @@ export default function FacilitiesMap({ facilities }: FacilitiesMapProps) {
                         spiderfyOnMaxZoom={true}
                         showCoverageOnHover={false}
                         zoomToBoundsOnClick={true}
+                        iconCreateFunction={createClusterCustomIcon}
                     >
                         {filteredFacilities.map((facility) => {
                             const color = getFacilityColor(facility);

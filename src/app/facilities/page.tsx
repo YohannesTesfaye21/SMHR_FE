@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import FacilityCard from '@/components/FacilityCard';
 import FilterPanelWrapper from '@/components/FilterPanelWrapper';
-import { Search, RotateCw, Map, List } from 'lucide-react';
+import { Search, RotateCw, Map, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FacilityFilterParams, HealthFacilityDTO } from '@/types/apiTypes';
 import { useFacilities, useRegions, useDistricts, useFacilityTypes } from '@/hooks/useFacilities';
 
@@ -25,8 +26,10 @@ export default function FacilitiesPage({
     ownership?: string; 
     operationalStatus?: string;
     pageNumber?: string;
+    pageSize?: string;
   };
 }) {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const query = searchParams.q || '';
   
@@ -155,15 +158,75 @@ export default function FacilitiesPage({
                     <>
                         {/* Results Grid */}
                         {facilities.length > 0 ? (
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-                                gap: '1.5rem' 
-                            }}>
-                                {facilities.map((f: HealthFacilityDTO) => (
-                                    <FacilityCard key={f.healthFacilityId} facility={f} />
-                                ))}
-                            </div>
+                            <>
+                                <div style={{ 
+                                    display: 'grid', 
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                                    gap: '1.5rem',
+                                    marginBottom: '3rem'
+                                }}>
+                                    {facilities.map((f: HealthFacilityDTO) => (
+                                        <FacilityCard key={f.healthFacilityId} facility={f} />
+                                    ))}
+                                </div>
+
+                                {/* Pagination */}
+                                <div style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'center', 
+                                    alignItems: 'center', 
+                                    gap: '1rem',
+                                    marginTop: '2rem'
+                                }}>
+                                    <button
+                                        disabled={filters.pageNumber === 1}
+                                        onClick={() => {
+                                            const params = new URLSearchParams(window.location.search);
+                                            params.set('pageNumber', String(filters.pageNumber! - 1));
+                                            router.push(`/facilities?${params.toString()}`);
+                                        }}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border-color)',
+                                            background: 'white',
+                                            color: filters.pageNumber === 1 ? 'var(--gray-300)' : 'var(--gray-700)',
+                                            cursor: filters.pageNumber === 1 ? 'not-allowed' : 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem'
+                                        }}
+                                    >
+                                        <ChevronLeft size={18} /> Previous
+                                    </button>
+                                    
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                                        Page <span style={{ color: 'var(--gray-900)', fontWeight: 600 }}>{filters.pageNumber}</span> of <span style={{ color: 'var(--gray-900)', fontWeight: 600 }}>{Math.ceil(totalCount / filters.pageSize!)}</span>
+                                    </span>
+
+                                    <button
+                                        disabled={filters.pageNumber! * filters.pageSize! >= totalCount}
+                                        onClick={() => {
+                                            const params = new URLSearchParams(window.location.search);
+                                            params.set('pageNumber', String(filters.pageNumber! + 1));
+                                            router.push(`/facilities?${params.toString()}`);
+                                        }}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border-color)',
+                                            background: 'white',
+                                            color: filters.pageNumber! * filters.pageSize! >= totalCount ? 'var(--gray-300)' : 'var(--gray-700)',
+                                            cursor: filters.pageNumber! * filters.pageSize! >= totalCount ? 'not-allowed' : 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem'
+                                        }}
+                                    >
+                                        Next <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            </>
                         ) : (
                             <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-secondary)' }}>
                             <Search size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />

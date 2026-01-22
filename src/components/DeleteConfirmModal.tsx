@@ -10,6 +10,7 @@ interface DeleteConfirmModalProps {
   title?: string;
   message?: string;
   facilityName?: string;
+  isDeletingAll?: boolean;
 }
 
 export default function DeleteConfirmModal({
@@ -18,7 +19,8 @@ export default function DeleteConfirmModal({
   onConfirm,
   title = 'Delete Facility',
   message = 'Are you sure you want to delete this facility? This action cannot be undone.',
-  facilityName
+  facilityName,
+  isDeletingAll = false
 }: DeleteConfirmModalProps) {
   if (!isOpen) return null;
 
@@ -176,6 +178,7 @@ export default function DeleteConfirmModal({
           >
             <button
               onClick={onClose}
+              disabled={isDeletingAll}
               style={{
                 padding: '0.75rem 1.5rem',
                 background: 'white',
@@ -183,23 +186,29 @@ export default function DeleteConfirmModal({
                 borderRadius: '8px',
                 color: 'var(--gray-700)',
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: isDeletingAll ? 'not-allowed' : 'pointer',
                 fontSize: '0.95rem',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                opacity: isDeletingAll ? 0.7 : 1
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--gray-50)';
-                e.currentTarget.style.borderColor = 'var(--gray-300)';
+                if (!isDeletingAll) {
+                  e.currentTarget.style.background = 'var(--gray-50)';
+                  e.currentTarget.style.borderColor = 'var(--gray-300)';
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
+                if (!isDeletingAll) {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }
               }}
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
+              disabled={isDeletingAll}
               style={{
                 padding: '0.75rem 1.5rem',
                 background: '#DC2626',
@@ -207,21 +216,39 @@ export default function DeleteConfirmModal({
                 borderRadius: '8px',
                 color: 'white',
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: isDeletingAll ? 'not-allowed' : 'pointer',
                 fontSize: '0.95rem',
                 transition: 'all 0.2s',
-                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                opacity: isDeletingAll ? 0.7 : 1
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#B91C1C';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
+                if (!isDeletingAll) {
+                  e.currentTarget.style.background = '#B91C1C';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#DC2626';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.3)';
+                if (!isDeletingAll) {
+                  e.currentTarget.style.background = '#DC2626';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.3)';
+                }
               }}
             >
-              Delete
+              {isDeletingAll && (
+                <div className="spinner" style={{ 
+                  width: '16px', 
+                  height: '16px', 
+                  border: '2px solid rgba(255, 255, 255, 0.3)', 
+                  borderTop: '2px solid white', 
+                  borderRadius: '50%', 
+                  animation: 'spin 0.8s linear infinite' 
+                }}></div>
+              )}
+              {isDeletingAll ? 'Deleting...' : 'Delete'}
             </button>
           </div>
         </div>

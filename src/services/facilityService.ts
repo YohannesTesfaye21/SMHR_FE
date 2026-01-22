@@ -77,5 +77,9 @@ export const facilityService = {
 
   deleteFacility: async (id: number) => {
     return apiClient.delete<any, ApiResponse<null>>(`/api/HealthFacilities/${id}`);
+  },
+
+  deleteAllFacilities: async () => {
+    return apiClient.delete<any, any>('/api/HealthFacilities/all');
   }
 };

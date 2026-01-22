@@ -3,11 +3,13 @@
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import { csvImportService } from '@/services/csvImportService';
 import { ArrowLeft, Upload, FileText, Download, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function BulkImportPage() {
   const router = useRouter();
+  const { showNotification } = useNotification();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -103,10 +105,18 @@ export default function BulkImportPage() {
       await csvImportService.uploadCSV(file);
       setUploadStatus('success');
       setFile(null);
+      showNotification('Facilities imported successfully!', 'success');
+      
+      // Redirect to admin dashboard after a delay
+      setTimeout(() => {
+        router.push('/admin');
+      }, 2000);
     } catch (error: any) {
       console.error('Upload failed:', error);
       setUploadStatus('error');
-      setErrorMessage(error.response?.data?.message || 'Failed to upload CSV. Please check the file format and try again.');
+      const msg = error.response?.data?.message || 'Failed to upload CSV. Please check the file format and try again.';
+      setErrorMessage(msg);
+      showNotification(msg, 'error');
     } finally {
       setUploading(false);
     }
@@ -329,7 +339,7 @@ export default function BulkImportPage() {
               ) : (
                 <>
                   <Upload size={18} />
-                  Start Import
+                  Start Upload
                 </>
               )}
             </button>

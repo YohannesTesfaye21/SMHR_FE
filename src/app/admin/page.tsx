@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import { useFacilities } from '@/hooks/useFacilities';
 import { facilityService } from '@/services/facilityService';
 import { HealthFacilityDTO } from '@/types/apiTypes';
@@ -11,15 +12,18 @@ import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 export default function AdminPage() {
   const router = useRouter();
+  const { showNotification } = useNotification();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [pageNumber, setPageNumber] = useState(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortField, setSortField] = useState<'name' | 'date' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
   const [facilityToDelete, setFacilityToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   // Debounce search term to avoid too many API calls
   React.useEffect(() => {
@@ -121,12 +125,36 @@ export default function AdminPage() {
       refetch();
       setDeleteModalOpen(false);
       setFacilityToDelete(null);
+      showNotification('Facility deleted successfully.', 'success');
     } catch (error: any) {
       console.error('Error deleting facility:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to delete facility. Please try again.';
-      alert(errorMessage);
+      showNotification(errorMessage, 'error');
       setDeleteModalOpen(false);
       setFacilityToDelete(null);
+    }
+  };
+
+  const handleDeleteAllClick = () => {
+    setBulkDeleteModalOpen(true);
+  };
+
+  const handleDeleteAllConfirm = async () => {
+    setIsDeletingAll(true);
+    try {
+      const response = await facilityService.deleteAllFacilities();
+      refetch();
+      setBulkDeleteModalOpen(false);
+      
+      // Get message from API response if available
+      const successMessage = (response as any)?.message || 'All facilities have been deleted successfully.';
+      showNotification(successMessage, 'success');
+    } catch (error: any) {
+      console.error('Error deleting all facilities:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete all facilities. Please try again.';
+      showNotification(errorMessage, 'error');
+    } finally {
+      setIsDeletingAll(false);
     }
   };
 
@@ -250,8 +278,37 @@ export default function AdminPage() {
                 }}
               />
             </div>
-          </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleDeleteAllClick}
+                className="btn-danger"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  alignSelf: 'flex-start',
+                  background: 'white',
+                  border: '1px solid #FECACA',
+                  borderRadius: '12px',
+                  color: '#DC2626',
+                  fontWeight: 500,
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#FEF2F2';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white';
+                }}
+              >
+                <Trash2 size={20} />
+                Delete All
+              </button>
+
               <button
                 onClick={() => router.push('/admin/facilities/import')}
                 className="btn-secondary"
@@ -621,6 +678,34 @@ export default function AdminPage() {
             }}>
               <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                 Showing {startIndex + 1} to {Math.min(startIndex + pageSize, totalCount)} of {totalCount} facilities
+              </div><div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Show:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setPageNumber(1); // Reset to first page when size changes
+                  }}
+                  style={{
+                    padding: '0.6rem 2.5rem 0.6rem 0.75rem',
+                    borderRadius: '10px',
+                    border: '1px solid var(--border-color)',
+                    background: 'white',
+                    fontSize: '0.9rem',
+                    color: 'var(--gray-700)',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    appearance: 'none',
+                    backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 0.75rem center',
+                    backgroundSize: '1rem',
+                  }}
+                >
+                  {[5, 10, 15, 25, 30, 50, 100].map(size => (
+                    <option key={size} value={size}>{size} per page</option>
+                  ))}
+                </select>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
@@ -664,6 +749,14 @@ export default function AdminPage() {
         }}
         onConfirm={handleDeleteConfirm}
         facilityName={facilityToDelete?.name}
+      />
+
+      <DeleteConfirmModal
+        isOpen={bulkDeleteModalOpen}
+        onClose={() => setBulkDeleteModalOpen(false)}
+        onConfirm={handleDeleteAllConfirm}
+        facilityName="ALL FACILITIES"
+        isDeletingAll={isDeletingAll}
       />
     </div>
   );

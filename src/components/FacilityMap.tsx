@@ -29,9 +29,10 @@ interface FacilityMapProps {
     latitude: number;
     longitude: number;
     name: string;
+    height?: string;
 }
 
-export default function FacilityMap({ latitude, longitude, name }: FacilityMapProps) {
+export default function FacilityMap({ latitude, longitude, name, height = '300px' }: FacilityMapProps) {
     useEffect(() => {
         fixLeafletIcon();
     }, []);
@@ -39,7 +40,7 @@ export default function FacilityMap({ latitude, longitude, name }: FacilityMapPr
     const position: [number, number] = [latitude, longitude];
 
     return (
-        <div style={{ height: '300px', width: '100%', borderRadius: '16px', overflow: 'hidden', position: 'relative', zIndex: 0 }}>
+        <div style={{ height, width: '100%', borderRadius: '16px', overflow: 'hidden', position: 'relative', zIndex: 0 }}>
              <MapContainer 
                 center={position} 
                 zoom={13} 

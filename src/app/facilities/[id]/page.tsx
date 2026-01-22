@@ -2,7 +2,7 @@
 
 import { useFacility } from '@/hooks/useFacilities';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Phone, Mail, Clock, ShieldCheck, Share2, User, RotateCw } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, Mail, Clock, ShieldCheck, Share2, User, RotateCw, Users, Briefcase, Calendar, Info, Activity } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 // Dynamic import for Map to avoid SSR issues
@@ -63,53 +63,49 @@ export default function FacilityDetailsPage({ params }: { params: { id: string }
   const isOpen = facility.operationalStatus === 'Operational';
 
   return (
-    <div style={{ paddingBottom: '4rem' }}>
+    <div style={{ paddingBottom: '3rem' }}>
       {/* Breadcrumb / Back */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--border-color)', padding: '1rem 0' }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--border-color)', padding: '0.75rem 0' }}>
         <div className="container">
              <Link href="/facilities" style={{ 
                  display: 'inline-flex', alignItems: 'center', gap: '8px', 
-                 color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 
+                 color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 
              }}>
-                 <ArrowLeft size={16} /> Back to Registry
+                 <ArrowLeft size={14} /> Back to Registry
              </Link>
         </div>
       </div>
 
-      <div className="container" style={{ marginTop: '2rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '2rem' }}>
+      <div className="container" style={{ marginTop: '1.5rem' }}>
+        {/* Top Row: Info Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1rem', alignItems: 'stretch', marginBottom: '1rem' }}>
             
-            {/* Main Content */}
-            <div style={{ gridColumn: 'span 8' }}>
-                 <div className="glass" style={{ padding: '2.5rem', borderRadius: '24px', background: 'white', marginBottom: '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                         <div>
-                             <span className="badge" style={{ background: 'var(--primary-100)', color: 'var(--primary-700)', marginBottom: '1rem', display: 'inline-block' }}>
-                                {facility.facilityType?.typeName || 'Unknown Type'}
-                             </span>
-                             <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{facility.healthFacilityName}</h1>
-                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
-                                 <MapPin size={18} />
-                                 {facility.district?.districtName}, {facility.district?.region?.regionName}, Somalia
-                             </div>
+            {/* 1. Header Info (Main Facility Identity) */}
+            <div style={{ gridColumn: 'span 4' }}>
+                 <div className="glass" style={{ padding: '1.25rem', borderRadius: '20px', background: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ marginBottom: 'auto' }}>
+                         <span className="badge" style={{ background: 'var(--primary-100)', color: 'var(--primary-700)', marginBottom: '0.5rem', display: 'inline-block', fontSize: '0.7rem' }}>
+                            {facility.facilityType?.typeName || 'Unknown Type'}
+                         </span>
+                         <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', lineHeight: 1.2 }}>{facility.healthFacilityName}</h1>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                             <MapPin size={14} />
+                             {facility.district?.districtName}, {facility.district?.region?.regionName}
                          </div>
-                         <button className="glass" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
-                             <Share2 size={20} />
-                         </button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
+                    <div style={{ display: 'flex', gap: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                         <div>
-                            <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Facility Code</p>
-                            <p style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: '1.1rem' }}>{facility.facilityId || 'N/A'}</p>
+                            <p style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.15rem' }}>Code</p>
+                            <p style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: '0.9rem' }}>{facility.facilityId || 'N/A'}</p>
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Ownership</p>
-                            <p style={{ fontWeight: 600 }}>{facility.ownership || 'N/A'}</p>
+                            <p style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.15rem' }}>Ownership</p>
+                            <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{facility.ownership || 'N/A'}</p>
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Status</p>
-                            <span className={`badge ${isOpen ? 'badge-success' : 'badge-warning'}`}>
+                            <p style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.15rem' }}>Status</p>
+                            <span className={`badge ${isOpen ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
                                 {facility.operationalStatus || 'Unknown'}
                             </span>
                         </div>
@@ -117,67 +113,148 @@ export default function FacilityDetailsPage({ params }: { params: { id: string }
                  </div>
             </div>
 
-            {/* Sidebar */}
-            <div style={{ gridColumn: 'span 4' }}>
-                <div className="glass" style={{ padding: '2rem', borderRadius: '24px', background: 'white', position: 'sticky', top: '100px' }}>
-                    <h3 style={{ marginBottom: '1.5rem' }}>Contact Info</h3>
+            {/* 2. Partners & Projects (Middle) */}
+            <div style={{ gridColumn: 'span 5' }}>
+                 <div className="glass" style={{ padding: '1.25rem', borderRadius: '20px', background: 'white', height: '100%' }}>
+                     <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '1rem' }}>
+                         <Briefcase size={18} color="var(--primary-500)" />
+                         Partners & Projects
+                     </h3>
+
+                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                         {/* Health Cluster */}
+                         <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--gray-50)', border: '1px solid var(--border-color)' }}>
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                                 <Activity size={12} /> Health
+                             </div>
+                             <p style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={facility.hcPartners || 'None'}>
+                                 {facility.hcPartners || 'None listed'}
+                             </p>
+                         </div>
+
+                         {/* Nutrition Cluster */}
+                         <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--gray-50)', border: '1px solid var(--border-color)' }}>
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                                 <Info size={12} /> Nutrition
+                             </div>
+                             <p style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={facility.nutritionClusterPartners || 'None'}>
+                                 {facility.nutritionClusterPartners || 'None listed'}
+                             </p>
+                         </div>
+
+                         {/* Damal Caafimaad */}
+                         {facility.damalCaafimaadPartner && (
+                             <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--gray-50)', border: '1px solid var(--border-color)' }}>
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                                     <ShieldCheck size={12} /> Damal
+                                 </div>
+                                 <p style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                     {facility.damalCaafimaadPartner}
+                                 </p>
+                             </div>
+                         )}
+
+                         {/* Better Life */}
+                         {facility.betterLifeProjectPartner && (
+                             <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--gray-50)', border: '1px solid var(--border-color)' }}>
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                                     <User size={12} /> Better Life
+                                 </div>
+                                 <p style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                     {facility.betterLifeProjectPartner}
+                                 </p>
+                             </div>
+                         )}
+                     </div>
+                 </div>
+            </div>
+
+            {/* 3. Contact Info (Right) */}
+            <div style={{ gridColumn: 'span 3' }}>
+                <div className="glass" style={{ padding: '1.25rem', borderRadius: '20px', background: 'white', height: '100%' }}>
+                    <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Contact Info</h3>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                         <div style={{ display: 'flex', gap: '1rem' }}>
-                            <Phone size={20} color="var(--primary-500)" />
+                         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                            <div style={{ width: '30px', height: '30px', background: 'var(--primary-50)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                               <Users size={14} color="var(--primary-600)" />
+                            </div>
                             <div>
-                                <p style={{ fontWeight: 600 }}>Contact Number</p>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--gray-600)' }}>{facility.facilityInChargeNumber || 'N/A'}</p>
+                                <p style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>In-Charge</p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>{facility.facilityInChargeName || 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                            <div style={{ width: '30px', height: '30px', background: 'var(--primary-50)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                               <Phone size={14} color="var(--primary-600)" />
+                            </div>
+                            <div>
+                                <p style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Number</p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>{facility.facilityInChargeNumber || 'N/A'}</p>
                             </div>
                         </div>
                     </div>
-
-                    <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
-                        <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <MapPin size={18} /> Location
-                        </h4>
-                        
-                        {facility.latitude && facility.longitude ? (
-                            <FacilityMap 
-                                latitude={facility.latitude} 
-                                longitude={facility.longitude} 
-                                name={facility.healthFacilityName || 'Facility'} 
-                            />
-                        ) : (
-                            <div style={{ 
-                                height: '200px', 
-                                background: 'var(--gray-50)', 
-                                borderRadius: '16px', 
-                                display: 'flex', 
-                                flexDirection: 'column',
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                color: 'var(--text-secondary)',
-                                textAlign: 'center',
-                                padding: '1rem'
-                            }}>
-                                <MapPin size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
-                                <p style={{ fontSize: '0.9rem' }}>Location coordinates not available</p>
-                            </div>
-                        )}
-                    </div>
-
-                    <button className="btn-primary" style={{ width: '100%', marginTop: '1.5rem', justifyContent: 'center', display: 'flex' }}>
-                        Get Directions
-                    </button>
                 </div>
             </div>
-
-            {/* Responsive styles */}
-            <style>{`
-                @media (max-width: 768px) {
-                    div[style*="grid-template-columns: repeat(12, 1fr)"] {
-                        display: flex !important;
-                        flex-direction: column !important;
-                    }
-                }
-            `}</style>
         </div>
+
+        {/* Bottom Row: Full-width Map */}
+        <div className="glass" style={{ padding: '1.25rem', borderRadius: '20px', background: 'white' }}>
+            <h3 style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
+                <MapPin size={20} color="var(--primary-500)" /> Location Map
+            </h3>
+            
+            {facility.latitude && facility.longitude ? (
+                <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                    <FacilityMap 
+                        latitude={facility.latitude} 
+                        longitude={facility.longitude} 
+                        name={facility.healthFacilityName || 'Facility'} 
+                        height="350px"
+                    />
+                </div>
+            ) : (
+                <div style={{ 
+                    height: '200px', 
+                    background: 'var(--gray-50)', 
+                    borderRadius: '12px', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    color: 'var(--text-secondary)',
+                    textAlign: 'center',
+                    padding: '1rem'
+                }}>
+                    <MapPin size={36} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                    <p style={{ fontSize: '0.85rem', fontWeight: 500 }}>Location coordinates not available</p>
+                </div>
+            )}
+        </div>
+
+        {/* Responsive styles */}
+        <style>{`
+            @media (max-width: 1200px) {
+                div[style*="grid-template-columns: repeat(12, 1fr)"] {
+                    grid-template-columns: repeat(2, 1fr) !important;
+                }
+                div[style*="grid-column: span 4"],
+                div[style*="grid-column: span 5"],
+                div[style*="grid-column: span 3"] {
+                    grid-column: span 1 !important;
+                }
+                div[style*="grid-column: span 5"] {
+                    grid-column: span 2 !important;
+                    order: 3;
+                }
+            }
+            @media (max-width: 768px) {
+                div[style*="grid-template-columns: repeat(12, 1fr)"] {
+                    display: flex !important;
+                    flex-direction: column !important;
+                }
+            }
+        `}</style>
       </div>
     </div>
   );

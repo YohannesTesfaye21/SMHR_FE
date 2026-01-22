@@ -32,22 +32,24 @@ export const facilityService = {
   },
 
   // Lookup API helpers for filters
-  getStates: async () => {
-    return apiClient.get<any, StateApiPagedResponse>('/api/LookupTables/states?pageSize=100');
+  getStates: async (params?: { searchTerm?: string; pageNumber?: number; pageSize?: number }) => {
+    const queryParams = { pageSize: 100, ...params };
+    return apiClient.get<any, StateApiPagedResponse>('/api/LookupTables/states', { params: queryParams });
   },
 
-  getRegions: async (stateId?: number) => {
-    const params = { pageSize: 100, ...(stateId && { stateId }) };
-    return apiClient.get<any, RegionApiPagedResponse>('/api/LookupTables/regions', { params });
+  getRegions: async (stateId?: number, params?: { searchTerm?: string; pageNumber?: number; pageSize?: number }) => {
+    const queryParams = { pageSize: 100, ...(stateId && { stateId }), ...params };
+    return apiClient.get<any, RegionApiPagedResponse>('/api/LookupTables/regions', { params: queryParams });
   },
 
-  getDistricts: async (regionId?: number) => {
-    const params = { pageSize: 100, ...(regionId && { regionId }) };
-    return apiClient.get<any, DistrictApiPagedResponse>('/api/LookupTables/districts', { params });
+  getDistricts: async (regionId?: number, params?: { searchTerm?: string; pageNumber?: number; pageSize?: number }) => {
+    const queryParams = { pageSize: 100, ...(regionId && { regionId }), ...params };
+    return apiClient.get<any, DistrictApiPagedResponse>('/api/LookupTables/districts', { params: queryParams });
   },
 
-  getFacilityTypes: async () => {
-    return apiClient.get<any, FacilityTypeApiPagedResponse>('/api/LookupTables/facility-types?pageSize=100');
+  getFacilityTypes: async (params?: { searchTerm?: string; pageNumber?: number; pageSize?: number }) => {
+    const queryParams = { pageSize: 100, ...params };
+    return apiClient.get<any, FacilityTypeApiPagedResponse>('/api/LookupTables/facility-types', { params: queryParams });
   },
 
   // Dashboard APIs

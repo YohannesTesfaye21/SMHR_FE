@@ -11,7 +11,7 @@ import {
   useStates 
 } from '@/hooks/useFacilities';
 import { facilityService } from '@/services/facilityService';
-import { Plus, Edit, Trash2, MapPin, LayoutGrid, ChevronRight, Search, ArrowLeft, RotateCw } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, LayoutGrid, ChevronRight, ChevronLeft, Search, ArrowLeft, RotateCw } from 'lucide-react';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import Modal from '@/components/Modal';
 import LookupFormModal from '@/components/LookupFormModal';
@@ -24,7 +24,25 @@ export default function LookupManagementPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   
   const [activeTab, setActiveTab] = useState<LookupTab>('states');
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search term to trigger server-side fetch
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset pagination when switching tabs
+  React.useEffect(() => {
+    setPageNumber(1);
+    setSearchQuery('');
+    setDebouncedSearch('');
+  }, [activeTab]);
   
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ id: number; name: string } | null>(null);
@@ -33,11 +51,12 @@ export default function LookupManagementPage() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<any>(null);
 
-  // Data fetching
-  const { data: statesData, isLoading: statesLoading, refetch: refetchStates } = useStates();
-  const { data: regionsData, isLoading: regionsLoading, refetch: refetchRegions } = useRegions();
-  const { data: districtsData, isLoading: districtsLoading, refetch: refetchDistricts } = useDistricts();
-  const { data: typesData, isLoading: typesLoading, refetch: refetchTypes } = useFacilityTypes();
+  // Data fetching - using server-side search and pagination
+  // Note: We use any here to avoid tanstack-query v4/v5 generic issues and because we're handling different return types dynamically.
+  const { data: statesData, isLoading: statesLoading, refetch: refetchStates } = (useStates as any)({ searchTerm: debouncedSearch, pageNumber, pageSize }, { enabled: activeTab === 'states' });
+  const { data: regionsData, isLoading: regionsLoading, refetch: refetchRegions } = (useRegions as any)(undefined, { searchTerm: debouncedSearch, pageNumber, pageSize }, { enabled: activeTab === 'regions' });
+  const { data: districtsData, isLoading: districtsLoading, refetch: refetchDistricts } = (useDistricts as any)(undefined, { searchTerm: debouncedSearch, pageNumber, pageSize }, { enabled: activeTab === 'districts' });
+  const { data: typesData, isLoading: typesLoading, refetch: refetchTypes } = (useFacilityTypes as any)({ searchTerm: debouncedSearch, pageNumber, pageSize }, { enabled: activeTab === 'types' });
 
   if (authLoading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
   if (!isAuthenticated) {
@@ -45,24 +64,37 @@ export default function LookupManagementPage() {
     return null;
   }
 
-  const isLoading = statesLoading || regionsLoading || districtsLoading || typesLoading;
+  const isLoading = 
+    (activeTab === 'states' && statesLoading) || 
+    (activeTab === 'regions' && regionsLoading) || 
+    (activeTab === 'districts' && districtsLoading) || 
+    (activeTab === 'types' && typesLoading);
 
   // Get items based on active tab
   const getItems = () => {
     switch (activeTab) {
-      case 'states': return statesData?.data?.items || [];
-      case 'regions': return regionsData?.data?.items || [];
-      case 'districts': return districtsData?.data?.items || [];
-      case 'types': return typesData?.data?.items || [];
+      case 'states': return (statesData as any)?.data?.items || [];
+      case 'regions': return (regionsData as any)?.data?.items || [];
+      case 'districts': return (districtsData as any)?.data?.items || [];
+      case 'types': return (typesData as any)?.data?.items || [];
       default: return [];
     }
   };
 
-  const allItems = getItems();
-  const filteredItems = allItems.filter((item: any) => {
-    const name = item.stateName || item.regionName || item.districtName || item.typeName || '';
-    return name.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  const getPaginationData = () => {
+    switch (activeTab) {
+      case 'states': return (statesData as any)?.data;
+      case 'regions': return (regionsData as any)?.data;
+      case 'districts': return (districtsData as any)?.data;
+      case 'types': return (typesData as any)?.data;
+      default: return null;
+    }
+  };
+
+  const filteredItems = getItems();
+  const paginationData = getPaginationData();
+  const totalCount = paginationData?.totalCount || 0;
+  const totalPages = paginationData?.totalPages || 1;
 
   const handleDeleteClick = (id: number, name: string) => {
     setItemToDelete({ id, name });
@@ -208,7 +240,8 @@ export default function LookupManagementPage() {
           ))}
         </div>
 
-        {/* Search */}
+        {/* Search - Commented out as requested but kept functionality */}
+        {/* 
         <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
                 <Search size={20} style={{ 
@@ -235,9 +268,10 @@ export default function LookupManagementPage() {
                 />
             </div>
             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Total: <b>{filteredItems.length}</b> {activeTab}
+                Total: <b>{totalCount}</b> {activeTab}
             </div>
         </div>
+        */}
 
         {/* Table Section */}
         <div style={{ 
@@ -247,7 +281,7 @@ export default function LookupManagementPage() {
             overflow: 'hidden',
             boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
         }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table key={activeTab} style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                     <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--border-color)' }}>
                         <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--gray-500)', textTransform: 'uppercase' }}>ID</th>
@@ -328,6 +362,96 @@ export default function LookupManagementPage() {
                     )}
                 </tbody>
             </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div style={{ 
+                    padding: '1.25rem 1.5rem', 
+                    background: 'var(--gray-50)', 
+                    borderTop: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    flexWrap: 'wrap'
+                }}>
+                    <div style={{ color: 'var(--gray-500)', fontSize: '0.875rem' }}>
+                        Showing <b>{(pageNumber - 1) * pageSize + 1}</b> to <b>{Math.min(pageNumber * pageSize, totalCount)}</b> of <b>{totalCount}</b> {activeTab}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>Rows per page:</span>
+                            <select 
+                                value={pageSize}
+                                onChange={(e) => {
+                                    setPageSize(Number(e.target.value));
+                                    setPageNumber(1);
+                                }}
+                                style={{
+                                    padding: '0.4rem 0.6rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-color)',
+                                    background: 'white',
+                                    fontSize: '0.875rem',
+                                    outline: 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {[5, 10, 20, 50].map(size => (
+                                    <option key={size} value={size}>{size}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <button 
+                                disabled={pageNumber === 1}
+                                onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+                                style={{
+                                    padding: '0.5rem 0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-color)',
+                                    background: 'white',
+                                    fontSize: '0.875rem',
+                                    color: pageNumber === 1 ? 'var(--gray-300)' : 'var(--gray-700)',
+                                    cursor: pageNumber === 1 ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <ChevronLeft size={16} />
+                                Previous
+                            </button>
+                            <div style={{ color: 'var(--gray-700)', fontSize: '0.875rem', fontWeight: 500, padding: '0 0.5rem' }}>
+                                Page {pageNumber} of {totalPages}
+                            </div>
+                            <button 
+                                disabled={pageNumber >= totalPages}
+                                onClick={() => setPageNumber(p => Math.min(totalPages, p + 1))}
+                                style={{
+                                    padding: '0.5rem 0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-color)',
+                                    background: 'white',
+                                    fontSize: '0.875rem',
+                                    color: pageNumber >= totalPages ? 'var(--gray-300)' : 'var(--gray-700)',
+                                    cursor: pageNumber >= totalPages ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Next
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
       </div>
 

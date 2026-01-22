@@ -41,7 +41,7 @@ export default function FacilitiesPage({
     ownership: searchParams.ownership,
     operationalStatus: searchParams.operationalStatus,
     pageNumber: searchParams.pageNumber ? Number(searchParams.pageNumber) : 1,
-    pageSize: viewMode === 'map' ? 1000 : 50 // Fetch more items for map view to be useful
+    pageSize: searchParams.pageSize ? Number(searchParams.pageSize) : 10
   };
 
   const { 
@@ -158,83 +158,117 @@ export default function FacilitiesPage({
                     <>
                         {/* Results Grid */}
                         {facilities.length > 0 ? (
-                            <>
-                                <div style={{ 
-                                    display: 'grid', 
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-                                    gap: '1.5rem',
-                                    marginBottom: '3rem'
-                                }}>
-                                    {facilities.map((f: HealthFacilityDTO) => (
-                                        <FacilityCard key={f.healthFacilityId} facility={f} />
-                                    ))}
-                                </div>
-
-                                {/* Pagination */}
-                                <div style={{ 
-                                    display: 'flex', 
-                                    justifyContent: 'center', 
-                                    alignItems: 'center', 
-                                    gap: '1rem',
-                                    marginTop: '2rem'
-                                }}>
-                                    <button
-                                        disabled={filters.pageNumber === 1}
-                                        onClick={() => {
-                                            const params = new URLSearchParams(window.location.search);
-                                            params.set('pageNumber', String(filters.pageNumber! - 1));
-                                            router.push(`/facilities?${params.toString()}`);
-                                        }}
-                                        style={{
-                                            padding: '0.5rem 1rem',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--border-color)',
-                                            background: 'white',
-                                            color: filters.pageNumber === 1 ? 'var(--gray-300)' : 'var(--gray-700)',
-                                            cursor: filters.pageNumber === 1 ? 'not-allowed' : 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem'
-                                        }}
-                                    >
-                                        <ChevronLeft size={18} /> Previous
-                                    </button>
-                                    
-                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-                                        Page <span style={{ color: 'var(--gray-900)', fontWeight: 600 }}>{filters.pageNumber}</span> of <span style={{ color: 'var(--gray-900)', fontWeight: 600 }}>{Math.ceil(totalCount / filters.pageSize!)}</span>
-                                    </span>
-
-                                    <button
-                                        disabled={filters.pageNumber! * filters.pageSize! >= totalCount}
-                                        onClick={() => {
-                                            const params = new URLSearchParams(window.location.search);
-                                            params.set('pageNumber', String(filters.pageNumber! + 1));
-                                            router.push(`/facilities?${params.toString()}`);
-                                        }}
-                                        style={{
-                                            padding: '0.5rem 1rem',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--border-color)',
-                                            background: 'white',
-                                            color: filters.pageNumber! * filters.pageSize! >= totalCount ? 'var(--gray-300)' : 'var(--gray-700)',
-                                            cursor: filters.pageNumber! * filters.pageSize! >= totalCount ? 'not-allowed' : 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem'
-                                        }}
-                                    >
-                                        Next <ChevronRight size={18} />
-                                    </button>
-                                </div>
-                            </>
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                                gap: '1.5rem',
+                                marginBottom: '2rem'
+                            }}>
+                                {facilities.map((f: HealthFacilityDTO) => (
+                                    <FacilityCard key={f.healthFacilityId} facility={f} />
+                                ))}
+                            </div>
                         ) : (
                             <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-secondary)' }}>
-                            <Search size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                            <h3>No facilities found</h3>
-                            <p>Try adjusting your search terms or filters.</p>
+                                <Search size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
+                                <h3>No facilities found</h3>
+                                <p>Try adjusting your filters or search query.</p>
                             </div>
                         )}
                     </>
+                )}
+
+                {/* Pagination - Visible in both Map and List views */}
+                {totalCount > 0 && (
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        gap: '1rem',
+                        marginTop: '2rem',
+                        padding: '1.5rem',
+                        background: 'white',
+                        borderRadius: '16px',
+                        border: '1px solid var(--border-color)',
+                        flexWrap: 'wrap'
+                    }}>
+                        <button
+                            disabled={filters.pageNumber === 1}
+                            onClick={() => {
+                                const params = new URLSearchParams(window.location.search);
+                                params.set('pageNumber', String(filters.pageNumber! - 1));
+                                router.push(`/facilities?${params.toString()}`);
+                            }}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border-color)',
+                                background: 'white',
+                                color: filters.pageNumber === 1 ? 'var(--gray-300)' : 'var(--gray-700)',
+                                cursor: filters.pageNumber === 1 ? 'not-allowed' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <ChevronLeft size={18} /> Previous
+                        </button>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Show:</span>
+                                <select
+                                    value={filters.pageSize}
+                                    onChange={(e) => {
+                                        const params = new URLSearchParams(window.location.search);
+                                        params.set('pageSize', e.target.value);
+                                        params.set('pageNumber', '1');
+                                        router.push(`/facilities?${params.toString()}`);
+                                    }}
+                                    style={{
+                                        padding: '0.4rem 0.6rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-color)',
+                                        background: 'white',
+                                        fontSize: '0.9rem',
+                                        color: 'var(--gray-700)',
+                                        cursor: 'pointer',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    {[5, 10, 20, 50, 100].map(size => (
+                                        <option key={size} value={size}>{size} per page</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                                Page <span style={{ color: 'var(--gray-900)', fontWeight: 600 }}>{filters.pageNumber}</span> of <span style={{ color: 'var(--gray-900)', fontWeight: 600 }}>{Math.ceil(totalCount / filters.pageSize!)}</span>
+                            </span>
+                        </div>
+
+                        <button
+                            disabled={filters.pageNumber! * filters.pageSize! >= totalCount}
+                            onClick={() => {
+                                const params = new URLSearchParams(window.location.search);
+                                params.set('pageNumber', String(filters.pageNumber! + 1));
+                                router.push(`/facilities?${params.toString()}`);
+                            }}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border-color)',
+                                background: 'white',
+                                color: filters.pageNumber! * filters.pageSize! >= totalCount ? 'var(--gray-300)' : 'var(--gray-700)',
+                                cursor: filters.pageNumber! * filters.pageSize! >= totalCount ? 'not-allowed' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            Next <ChevronRight size={18} />
+                        </button>
+                    </div>
                 )}
              </>
           )}

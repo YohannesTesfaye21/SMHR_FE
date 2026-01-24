@@ -8,10 +8,10 @@ export const metadata: Metadata = {
   description: "Comprehensive registry of health facilities in Somalia.",
   icons: {
     icon: [
-      { url: '/applogo.jpeg', type: 'image/jpeg' },
+      { url: '/logo.jpg', type: 'image/jpeg' },
     ],
-    shortcut: '/applogo.jpeg',
-    apple: '/applogo.jpeg',
+    shortcut: '/logo.jpg',
+    apple: '/logo.jpg',
   },
 };
 

@@ -62,7 +62,7 @@ export default function Header() {
                     </div>
                 ) : (
                     <img
-                        src="/applogo.jpeg"
+                        src="/logo.jpg"
                         alt="Federal Government of Somalia Logo"
                         width={50}
                         height={50}

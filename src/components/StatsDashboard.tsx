@@ -1,9 +1,30 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Building2, CheckCircle, XCircle, AlertCircle, RotateCw, FileSpreadsheet, MapPin, ChevronUp, ChevronDown } from 'lucide-react';
-import { useDashboardStatistics } from '@/hooks/useDashboard';
+import { Building2, CheckCircle, XCircle, AlertCircle, RotateCw, FileSpreadsheet, MapPin, ChevronUp, ChevronDown, Map, Layers, Award, Search } from 'lucide-react';
+import { 
+  useDashboardStatistics, 
+  useDashboardCards, 
+  useDashboardStateStats, 
+  useTopRegions, 
+  useDashboardCharts 
+} from '@/hooks/useDashboard';
 import type { DashboardStatisticsDTO, StateStatisticsDTO } from '@/types/apiTypes';
+import { 
+  ResponsiveContainer, 
+  BarChart, 
+  PieChart, 
+  AreaChart, 
+  CartesianGrid, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  Bar, 
+  Pie, 
+  Cell, 
+  Legend, 
+  Area 
+} from 'recharts';
 
 const STAT_COLORS = {
   total: { bg: 'linear-gradient(135deg, #4C86E4 0%, #3b6bb5 100%)', shadow: 'rgba(76, 134, 228, 0.35)' },
@@ -11,6 +32,16 @@ const STAT_COLORS = {
   closed: { bg: '#FEE2E2', fg: '#991b1b', icon: '#ef4444' },
   gap: { bg: '#FEF9C3', fg: '#854d0e', icon: '#eab308' },
 } as const;
+
+const COLORS = {
+  gradient: {
+    blue: ['#4189DD', '#026aa2'],
+    teal: ['#14b8a6', '#0d9488'],
+    purple: ['#a855f7', '#9333ea'],
+    orange: ['#f97316', '#ea580c'],
+  },
+  primary: ['#4189DD', '#14b8a6', '#a855f7', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#10b981'],
+};
 
 // Animated Counter with easing
 function AnimatedCounter({ end, duration = 2000, suffix = '' }: { end: number; duration?: number; suffix?: string }) {

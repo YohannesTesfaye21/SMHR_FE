@@ -45,6 +45,18 @@ export interface FacilityType {
   createdAt: string;
 }
 
+export interface Ownership {
+  ownershipId: number;
+  ownershipType: string;
+  createdAt: string;
+}
+
+export interface OperationalStatus {
+  operationalStatusId: number;
+  statusName: string;
+  createdAt: string;
+}
+
 export interface HealthFacilityDTO {
   healthFacilityId: number;
   facilityId: string | null;
@@ -53,8 +65,8 @@ export interface HealthFacilityDTO {
   longitude: number | null;
   district: District | null;
   facilityType: FacilityType | null;
-  ownership: string | null;
-  operationalStatus: string | null;
+  ownership: Ownership | null;
+  operationalStatus: OperationalStatus | null;
   hcPartners: string | null;
   hcProjectEndDate: string | null;
   nutritionClusterPartners: string | null;

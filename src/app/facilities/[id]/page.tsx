@@ -60,7 +60,7 @@ export default function FacilityDetailsPage({ params }: { params: { id: string }
   }
 
   const facility = response.data;
-  const isOpen = facility.operationalStatus === 'Operational';
+  const isOpen = facility.operationalStatus?.statusName === 'Operational';
 
   return (
     <div style={{ paddingBottom: '3rem' }}>
@@ -101,12 +101,12 @@ export default function FacilityDetailsPage({ params }: { params: { id: string }
                         </div>
                         <div>
                             <p style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.15rem' }}>Ownership</p>
-                            <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{facility.ownership || 'N/A'}</p>
+                            <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{facility.ownership?.ownershipType || 'N/A'}</p>
                         </div>
                         <div>
                             <p style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.15rem' }}>Status</p>
                             <span className={`badge ${isOpen ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
-                                {facility.operationalStatus || 'Unknown'}
+                                {facility.operationalStatus?.statusName || 'Unknown'}
                             </span>
                         </div>
                     </div>

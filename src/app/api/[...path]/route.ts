@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Backend URL configuration
 // Always use HTTPS - no HTTP URLs
 // Set BACKEND_API_URL in Environment Variables if different
-const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://144.91.86.199:8443';
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://144.91.86.199:8080';
 const isHttps = BACKEND_API_URL.startsWith('https://');
 
 // Set NODE_TLS_REJECT_UNAUTHORIZED for self-signed certificates
@@ -59,10 +59,10 @@ async function proxyRequest(
 ) {
   try {
     // Remove 'api' prefix if present
-    const cleanPath = pathSegments[0] === 'api' 
+    const cleanPath = pathSegments[0] === 'api'
       ? pathSegments.slice(1).join('/')
       : pathSegments.join('/');
-    
+
     // Debug endpoint for configuration check
     if (cleanPath === 'debug' || cleanPath === 'debug/config') {
       return NextResponse.json({
@@ -77,7 +77,7 @@ async function proxyRequest(
         message: 'API Proxy is configured.',
       });
     }
-    
+
     // Construct backend URL
     const searchParams = request.nextUrl.searchParams.toString();
     const backendUrl = `${BACKEND_API_URL}/api/${cleanPath}${searchParams ? `?${searchParams}` : ''}`;
@@ -94,7 +94,7 @@ async function proxyRequest(
     // Prepare headers - forward essential headers from original request
     const headers: HeadersInit = {};
     const headersToForward = ['content-type', 'authorization', 'accept'];
-    
+
     headersToForward.forEach(headerName => {
       const value = request.headers.get(headerName);
       if (value) {
@@ -117,7 +117,7 @@ async function proxyRequest(
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout for large files
-      
+
       try {
         response = await fetch(backendUrl, {
           method,
@@ -131,14 +131,14 @@ async function proxyRequest(
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const errorCode = (error as any)?.code;
-      
+
       console.error('[API Proxy] Request failed:', {
         url: backendUrl,
         method,
         error: errorMessage,
         code: errorCode,
       });
-      
+
       // Format error message
       let formattedError: string;
       if (errorMessage.includes('certificate') || errorMessage.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE')) {
@@ -152,10 +152,10 @@ async function proxyRequest(
       } else {
         formattedError = errorMessage;
       }
-      
+
       return NextResponse.json(
-        { 
-          error: 'Proxy request failed', 
+        {
+          error: 'Proxy request failed',
           message: formattedError,
         },
         { status: 502 }
@@ -165,7 +165,7 @@ async function proxyRequest(
     // Parse response
     const contentType = response.headers.get('content-type') || '';
     let data: any;
-    
+
     if (contentType.includes('application/json')) {
       try {
         data = await response.json();
@@ -190,17 +190,17 @@ async function proxyRequest(
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     console.error('[API Proxy] Unexpected error:', {
       message: errorMessage,
       url: request.url,
       method,
       backendUrl: BACKEND_API_URL,
     });
-    
+
     return NextResponse.json(
-      { 
-        error: 'Proxy request failed', 
+      {
+        error: 'Proxy request failed',
         message: errorMessage,
       },
       { status: 500 }

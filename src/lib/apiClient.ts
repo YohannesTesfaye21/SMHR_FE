@@ -17,10 +17,9 @@ const getServerBaseURL = (): string => {
   if (typeof window !== 'undefined') {
     throw new Error('getServerBaseURL should never be called on client');
   }
-  
-  // Use environment variable if set, otherwise use HTTPS default
-  // Always HTTPS - no HTTP URLs in the codebase
-  return process.env.BACKEND_API_URL || 'https://144.91.86.199:8443';
+
+  // Use environment variable if set, otherwise use default
+  return process.env.BACKEND_API_URL || 'http://144.91.86.199:8080';
 };
 
 const sanitizeUrlForClient = (url: string | undefined): string => {
@@ -54,87 +53,41 @@ apiClient.interceptors.request.use(
     // CRITICAL: Always check client-side first and enforce empty baseURL
     // This prevents HTTP URLs from leaking to the client during SSR/hydration
     const isClient = typeof window !== 'undefined';
-    
+
     if (isClient) {
-      // Client-side: ALWAYS use relative URLs through Next.js API proxy
-      // Force baseURL to be empty - this is critical for preventing Mixed Content errors
-      config.baseURL = '';
-      
-      // Also ensure defaults are empty (double protection)
-      if (apiClient.defaults.baseURL) {
-        apiClient.defaults.baseURL = '';
-      }
-      
-      // Sanitize URL to ensure it's always relative
-      if (config.url) {
-        config.url = sanitizeUrlForClient(config.url);
-      }
-      
-      // Final safety check: Block ANY HTTP URLs on client side
-      // Check both the baseURL and the final constructed URL
-      const finalBaseURL = String(config.baseURL || '');
-      const finalURL = String(config.url || '');
-      const constructedURL = finalBaseURL + finalURL;
-      
-      // Block HTTP URLs in any form - log in production too for debugging
-      if (finalBaseURL.includes('http://') || finalURL.includes('http://') || constructedURL.includes('http://')) {
-        // Log the error in production to help debug
-        console.error('[apiClient] SECURITY ERROR - HTTP URL detected on client:', {
-          baseURL: finalBaseURL,
-          url: finalURL,
-          constructedURL,
-          defaultsBaseURL: apiClient.defaults.baseURL,
-        });
-        
-        // Force to relative URLs
+      // Client-side: Use explicit backend URL if available, otherwise fallback to proxy
+      const publicApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+
+      if (publicApiUrl) {
+        config.baseURL = publicApiUrl;
+      } else {
         config.baseURL = '';
-        config.url = sanitizeUrlForClient(finalURL);
-        
-        // Double-check after sanitization
-        const sanitizedBaseURL = String(config.baseURL || '');
-        const sanitizedURL = String(config.url || '');
-        const sanitizedFullURL = sanitizedBaseURL + sanitizedURL;
-        
-        if (sanitizedFullURL.includes('http://') || sanitizedURL.includes('http://')) {
-          const error = new Error('HTTP URL detected on client side. All requests must use relative URLs through /api/ proxy.');
-          console.error('[apiClient] SECURITY ERROR - HTTP URL blocked after sanitization:', {
-            originalBaseURL: finalBaseURL,
-            originalURL: finalURL,
-            constructedURL,
-            sanitizedBaseURL,
-            sanitizedURL,
-            sanitizedFullURL,
-          });
-          throw error;
+        // Sanitize URL to ensure it's always relative if using proxy
+        if (config.url) {
+          config.url = sanitizeUrlForClient(config.url);
         }
       }
-      
+
       // Add auth token
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-      
+
       // Log the final URL being used on client (for debugging)
-      const finalUrl = (config.baseURL || '') + (config.url || '');
-      console.log('[apiClient] Client-side request:', {
-        baseURL: config.baseURL,
-        url: config.url,
-        finalUrl,
-        method: config.method,
-      });
-      
-      // CRITICAL: Final check - if HTTP is detected, throw immediately
-      if (finalUrl.includes('http://')) {
-        console.error('[apiClient] FATAL: HTTP URL in final constructed URL:', finalUrl);
-        throw new Error(`FATAL: HTTP URL detected in final URL: ${finalUrl}`);
-      }
+      // const finalUrl = (config.baseURL || '') + (config.url || '');
+      // console.log('[apiClient] Client-side request:', {
+      //   baseURL: config.baseURL,
+      //   url: config.url,
+      //   finalUrl,
+      //   method: config.method,
+      // });
     } else {
       // Server-side: Set baseURL for direct backend connection
       // Use helper function to get server URL (prevents HTTP URL in client bundle)
       const serverBaseURL = getServerBaseURL();
       config.baseURL = serverBaseURL;
-      
+
       // Log server-side request (for debugging)
       console.log('[apiClient] Server-side request:', {
         baseURL: serverBaseURL,
@@ -143,7 +96,7 @@ apiClient.interceptors.request.use(
         method: config.method,
       });
     }
-    
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -159,7 +112,7 @@ apiClient.interceptors.response.use(
         const baseURL = error.config?.baseURL || '';
         const url = error.config?.url || '';
         const fullUrl = baseURL ? `${baseURL}${url}` : url;
-        
+
         // Check for HTTP URLs in error (this shouldn't happen but helps debug)
         if (fullUrl.includes('http://') && typeof window !== 'undefined') {
           console.error('[apiClient] SECURITY WARNING: HTTP URL detected in error config:', {
@@ -169,7 +122,7 @@ apiClient.interceptors.response.use(
             message: error.message,
           });
         }
-        
+
         console.error(`API Error (${fullUrl || 'unknown'}): ${error.message}`);
       }
     }

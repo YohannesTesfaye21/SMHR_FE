@@ -83,7 +83,7 @@ export default function Header() {
             <ul style={{ display: 'flex', gap: '2rem', listStyle: 'none' }}>
                 <li><Link href="/" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Home</Link></li>
                 <li><Link href="/facilities" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Facilities</Link></li>
-                <li><Link href="/map" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Map</Link></li>
+
                 <li><Link href="/statistics" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Statistics</Link></li>
             </ul>
         </nav>
@@ -290,7 +290,7 @@ export default function Header() {
              <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem', listStyle: 'none', padding: '0 1.5rem' }}>
                 <li><Link href="/" onClick={() => setIsOpen(false)} style={{ display: 'block', padding: '0.5rem 0', fontWeight: 500 }}>Home</Link></li>
                 <li><Link href="/facilities" onClick={() => setIsOpen(false)} style={{ display: 'block', padding: '0.5rem 0', fontWeight: 500 }}>Facilities</Link></li>
-                <li><Link href="/map" onClick={() => setIsOpen(false)} style={{ display: 'block', padding: '0.5rem 0', fontWeight: 500 }}>Map</Link></li>
+
                 <li><Link href="/statistics" onClick={() => setIsOpen(false)} style={{ display: 'block', padding: '0.5rem 0', fontWeight: 500 }}>Statistics</Link></li>
                 {isAuthenticated ? (
                     <>

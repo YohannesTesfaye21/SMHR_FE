@@ -3,6 +3,7 @@
 import React from 'react';
 import { Search, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Hero() {
   const router = useRouter();
@@ -18,48 +19,21 @@ export default function Hero() {
   return (
     <div style={{ 
         position: 'relative', 
-        padding: '6rem 0', 
+        padding: '1rem 0', 
         overflow: 'hidden',
         background: 'linear-gradient(180deg, var(--primary-50) 0%, rgba(255,255,255,0) 100%)'
     }}>
       <div className="container" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-        <div style={{ 
-            display: 'inline-flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            background: 'white', 
-            padding: '4px 12px', 
-            borderRadius: '99px',
-            border: '1px solid var(--primary-200)',
-            marginBottom: '1.5rem',
-            color: 'var(--primary-700)',
-            fontSize: '0.875rem',
-            fontWeight: 600
-        }}>
-            <span style={{ width: '8px', height: '8px', background: 'var(--primary-500)', borderRadius: '50%' }}></span>
-            Official Registry 2025
-        </div>
         
-        <h1 style={{ 
-            fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+        <h3 style={{ 
+            fontSize: 'clamp(1.5rem, 5vw, 2rem)',
             color: 'var(--gray-900)', 
             marginBottom: '1rem',
             letterSpacing: '-0.02em'
         }}>
             Find Health Facilities <br />
             <span style={{ color: 'var(--primary-500)' }}>Across Somalia</span>
-        </h1>
-        
-        <p style={{ 
-            fontSize: '1.125rem', 
-            color: 'var(--gray-500)', 
-            marginBottom: '2.5rem',
-            maxWidth: '600px',
-            marginLeft: 'auto',
-            marginRight: 'auto'
-        }}>
-            Access the Master Health Facility List for accurate information on public and private health services.
-        </p>
+        </h3>
 
         <form onSubmit={handleSearch} style={{ 
             maxWidth: '600px', 
@@ -94,7 +68,15 @@ export default function Hero() {
                     <Search size={20} />
                 </button>
             </div>
-        </form>
+        </form> 
+        <div style={{ textAlign: 'center', padding:'2em 0' }}>
+            <Link href="/facilities" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                Browse All Facilities
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </Link>
+          </div>
       </div>
 
       {/* Decorative Background Elements */}

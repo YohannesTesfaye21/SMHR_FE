@@ -108,180 +108,268 @@ interface FacilitiesMapProps {
 
 export default function FacilitiesMap({ facilities }: FacilitiesMapProps) {
     const [selectedStates, setSelectedStates] = useState<Set<string>>(new Set());
+    const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<Set<string>>(new Set());
 
     // Default center (Somalia approx)
     const defaultCenter: [number, number] = [5.1521, 46.1996];
 
     const validFacilities = facilities.filter(f => f.latitude && f.longitude);
 
-    // Extract unique states and assign colors
-    const stateColors = useMemo(() => {
-        const statesMap = new Map<string, string>();
-        
+    // Extract unique states (sorted)
+    const uniqueStates = useMemo(() => {
+        const states = new Set<string>();
         validFacilities.forEach(facility => {
             const stateName = facility.district?.region?.state?.stateName;
-            if (stateName && !statesMap.has(stateName)) {
-                statesMap.set(stateName, stringToColor(stateName));
+            if (stateName) states.add(stateName);
+        });
+        return Array.from(states).sort();
+    }, [validFacilities]);
+
+    // Extract unique facility types and assign colors
+    const facilityTypeColors = useMemo(() => {
+        const typesMap = new Map<string, string>();
+        
+        validFacilities.forEach(facility => {
+            const typeName = facility.facilityType?.typeName;
+            if (typeName && !typesMap.has(typeName)) {
+                typesMap.set(typeName, stringToColor(typeName));
             }
         });
         
-        // Sort states alphabetically for consistent legend display
-        return new Map([...statesMap.entries()].sort((a, b) => a[0].localeCompare(b[0])));
+        return new Map([...typesMap.entries()].sort((a, b) => a[0].localeCompare(b[0])));
     }, [validFacilities]);
 
-    // Calculate facility count per state
-    const stateFacilityCounts = useMemo(() => {
-        const counts = new Map<string, number>();
+    // Calculate counts
+    const counts = useMemo(() => {
+        const stateCounts = new Map<string, number>();
+        const typeCounts = new Map<string, number>();
+
         validFacilities.forEach(facility => {
             const stateName = facility.district?.region?.state?.stateName;
-            if (stateName) {
-                counts.set(stateName, (counts.get(stateName) || 0) + 1);
-            }
+            const typeName = facility.facilityType?.typeName;
+
+            if (stateName) stateCounts.set(stateName, (stateCounts.get(stateName) || 0) + 1);
+            if (typeName) typeCounts.set(typeName, (typeCounts.get(typeName) || 0) + 1);
         });
-        return counts;
+
+        return { stateCounts, typeCounts };
     }, [validFacilities]);
 
-    // Filter facilities based on selected states
+    // Filter facilities
     const filteredFacilities = useMemo(() => {
-        if (selectedStates.size === 0) {
-            return validFacilities;
-        }
         return validFacilities.filter(facility => {
             const stateName = facility.district?.region?.state?.stateName;
-            return stateName && selectedStates.has(stateName);
-        });
-    }, [validFacilities, selectedStates]);
+            const typeName = facility.facilityType?.typeName;
 
-    // Get color for a facility based on its state
+            const matchesState = selectedStates.size === 0 || (stateName && selectedStates.has(stateName));
+            const matchesType = selectedFacilityTypes.size === 0 || (typeName && selectedFacilityTypes.has(typeName));
+
+            return matchesState && matchesType;
+        });
+    }, [validFacilities, selectedStates, selectedFacilityTypes]);
+
+    // Get color for a facility based on its type
     const getFacilityColor = (facility: HealthFacilityDTO): string => {
-        const stateName = facility.district?.region?.state?.stateName;
-        return stateName ? (stateColors.get(stateName) || '#3b82f6') : '#3b82f6';
+        const typeName = facility.facilityType?.typeName;
+        return typeName ? (facilityTypeColors.get(typeName) || '#3b82f6') : '#3b82f6';
     };
 
-    // Toggle state selection
     const toggleState = (stateName: string) => {
         setSelectedStates(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(stateName)) {
-                newSet.delete(stateName);
-            } else {
-                newSet.add(stateName);
-            }
+            if (newSet.has(stateName)) newSet.delete(stateName);
+            else newSet.add(stateName);
+            return newSet;
+        });
+    };
+
+    const toggleFacilityType = (typeName: string) => {
+        setSelectedFacilityTypes(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(typeName)) newSet.delete(typeName);
+            else newSet.add(typeName);
             return newSet;
         });
     };
 
     return (
         <div style={{ width: '100%' }}>
-            {/* Horizontal State Filter Bar */}
-            {stateColors.size > 0 && (
-                <div style={{
-                    marginBottom: '1rem',
-                    background: 'white',
-                    borderRadius: '12px',
-                    padding: '1rem',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-                }}>
-                    {/* Header */}
+            {/* Filters Container */}
+            <div style={{
+                marginBottom: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+            }}>
+                {/* Facility Type Filter (Legend) */}
+                {facilityTypeColors.size > 0 && (
                     <div style={{
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        color: '#374151',
-                        marginBottom: '0.75rem'
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1rem',
+                        border: '1px solid var(--border-color)',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                     }}>
-                        Filter by State {selectedStates.size > 0 && (
-                            <span style={{ 
-                                color: '#667eea',
-                                fontSize: '0.85rem',
-                                fontWeight: 500,
-                                marginLeft: '0.5rem'
-                            }}>
-                                ({selectedStates.size} selected)
-                            </span>
-                        )}
-                    </div>
+                        <div style={{
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            color: '#374151',
+                            marginBottom: '0.75rem'
+                        }}>
+                            Filter by Facility Type {selectedFacilityTypes.size > 0 && (
+                                <span style={{ 
+                                    color: '#667eea',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 500,
+                                    marginLeft: '0.5rem'
+                                }}>
+                                    ({selectedFacilityTypes.size} selected)
+                                </span>
+                            )}
+                        </div>
 
-                    {/* Horizontal scrollable state chips */}
+                        <div style={{
+                            display: 'flex',
+                            gap: '8px',
+                            overflowX: 'auto',
+                            paddingBottom: '4px',
+                            scrollbarWidth: 'thin'
+                        }}>
+                            {Array.from(facilityTypeColors.entries()).map(([typeName, color]) => {
+                                const isSelected = selectedFacilityTypes.has(typeName);
+                                const count = counts.typeCounts.get(typeName) || 0;
+                                
+                                return (
+                                    <div 
+                                        key={typeName}
+                                        onClick={() => toggleFacilityType(typeName)}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '8px 14px',
+                                            borderRadius: '20px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            background: isSelected ? '#667eea' : '#f9fafb',
+                                            border: isSelected ? '2px solid #667eea' : '2px solid #e5e7eb',
+                                            whiteSpace: 'nowrap',
+                                            flexShrink: 0
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '12px',
+                                            height: '12px',
+                                            borderRadius: '50%',
+                                            background: isSelected ? 'white' : color,
+                                            border: isSelected ? 'none' : '2px solid white',
+                                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                                            flexShrink: 0
+                                        }} />
+                                        <span style={{
+                                            fontSize: '0.85rem',
+                                            color: isSelected ? 'white' : '#374151',
+                                            fontWeight: isSelected ? 600 : 500
+                                        }}>
+                                            {typeName}
+                                        </span>
+                                        <span style={{
+                                            padding: '2px 8px',
+                                            borderRadius: '10px',
+                                            background: isSelected ? 'rgba(255,255,255,0.25)' : '#e5e7eb',
+                                            color: isSelected ? 'white' : '#6b7280',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600
+                                        }}>
+                                            {count}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* State Filter */}
+                {/* {uniqueStates.length > 0 && (
                     <div style={{
-                        display: 'flex',
-                        gap: '8px',
-                        overflowX: 'auto',
-                        paddingBottom: '4px',
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: '#cbd5e1 #f1f5f9'
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1rem',
+                        border: '1px solid var(--border-color)',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                     }}>
-                        {Array.from(stateColors.entries()).map(([stateName, color]) => {
-                            const isSelected = selectedStates.has(stateName);
-                            const facilityCount = stateFacilityCounts.get(stateName) || 0;
-                            
-                            return (
-                                <div 
-                                    key={stateName}
-                                    onClick={() => toggleState(stateName)}
-                                    style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        padding: '8px 14px',
-                                        borderRadius: '20px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        background: isSelected ? '#667eea' : '#f9fafb',
-                                        border: isSelected ? '2px solid #667eea' : '2px solid #e5e7eb',
-                                        whiteSpace: 'nowrap',
-                                        flexShrink: 0
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (!isSelected) {
-                                            e.currentTarget.style.background = '#f3f4f6';
-                                            e.currentTarget.style.borderColor = '#cbd5e1';
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (!isSelected) {
-                                            e.currentTarget.style.background = '#f9fafb';
-                                            e.currentTarget.style.borderColor = '#e5e7eb';
-                                        }
-                                    }}
-                                >
-                                    {/* Color indicator */}
-                                    <div style={{
-                                        width: '12px',
-                                        height: '12px',
-                                        borderRadius: '50%',
-                                        background: isSelected ? 'white' : color,
-                                        border: isSelected ? 'none' : '2px solid white',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                                        flexShrink: 0
-                                    }} />
+                        <div style={{
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            color: '#374151',
+                            marginBottom: '0.75rem'
+                        }}>
+                            Filter by State {selectedStates.size > 0 && (
+                                <span style={{ 
+                                    color: '#667eea',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 500,
+                                    marginLeft: '0.5rem'
+                                }}>
+                                    ({selectedStates.size} selected)
+                                </span>
+                            )}
+                        </div>
 
-                                    {/* State name */}
-                                    <span style={{
-                                        fontSize: '0.85rem',
-                                        color: isSelected ? 'white' : '#374151',
-                                        fontWeight: isSelected ? 600 : 500
-                                    }}>
-                                        {stateName}
-                                    </span>
-
-                                    {/* Facility count badge */}
-                                    <span style={{
-                                        padding: '2px 8px',
-                                        borderRadius: '10px',
-                                        background: isSelected ? 'rgba(255,255,255,0.25)' : '#e5e7eb',
-                                        color: isSelected ? 'white' : '#6b7280',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600
-                                    }}>
-                                        {facilityCount}
-                                    </span>
-                                </div>
-                            );
-                        })}
+                        <div style={{
+                            display: 'flex',
+                            gap: '8px',
+                            overflowX: 'auto',
+                            paddingBottom: '4px',
+                            scrollbarWidth: 'thin'
+                        }}>
+                            {uniqueStates.map((stateName) => {
+                                const isSelected = selectedStates.has(stateName);
+                                const count = counts.stateCounts.get(stateName) || 0;
+                                
+                                return (
+                                    <div 
+                                        key={stateName}
+                                        onClick={() => toggleState(stateName)}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '8px 14px',
+                                            borderRadius: '20px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            background: isSelected ? '#374151' : '#f9fafb',
+                                            border: isSelected ? '2px solid #374151' : '2px solid #e5e7eb',
+                                            whiteSpace: 'nowrap',
+                                            flexShrink: 0
+                                        }}
+                                    >
+                                        <span style={{
+                                            fontSize: '0.85rem',
+                                            color: isSelected ? 'white' : '#374151',
+                                            fontWeight: isSelected ? 600 : 500
+                                        }}>
+                                            {stateName}
+                                        </span>
+                                        <span style={{
+                                            padding: '2px 8px',
+                                            borderRadius: '10px',
+                                            background: isSelected ? 'rgba(255,255,255,0.25)' : '#e5e7eb',
+                                            color: isSelected ? 'white' : '#6b7280',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600
+                                        }}>
+                                            {count}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
-            )}
+                )} */}
+            </div>
 
             {/* Map Container */}
             <div style={{ height: '600px', width: '100%', borderRadius: '16px', overflow: 'hidden', position: 'relative', zIndex: 0, border: '1px solid var(--border-color)' }}>
@@ -319,29 +407,38 @@ export default function FacilitiesMap({ facilities }: FacilitiesMapProps) {
                                             <div style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '6px' }}>
                                                 {facility.healthFacilityName}
                                             </div>
-                                            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '4px' }}>
-                                                {facility.facilityType?.typeName}
-                                            </div>
-                                            {facility.district?.region?.state?.stateName && (
+                                            
+                                            {/* Facility Type with Color Dot */}
+                                            {facility.facilityType?.typeName && (
                                                 <div style={{ 
-                                                    fontSize: '0.8rem', 
-                                                    color: '#888',
+                                                    fontSize: '0.85rem', 
+                                                    color: '#666', 
                                                     marginBottom: '8px',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     gap: '6px'
                                                 }}>
                                                     <div style={{
-                                                        width: '12px',
-                                                        height: '12px',
+                                                        width: '10px',
+                                                        height: '10px',
                                                         borderRadius: '50%',
                                                         background: color,
-                                                        border: '2px solid white',
-                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                                        flexShrink: 0
                                                     }} />
+                                                    {facility.facilityType.typeName}
+                                                </div>
+                                            )}
+
+                                            {facility.district?.region?.state?.stateName && (
+                                                <div style={{ 
+                                                    fontSize: '0.8rem', 
+                                                    color: '#888',
+                                                    marginBottom: '8px'
+                                                }}>
                                                     {facility.district.region.state.stateName}
                                                 </div>
                                             )}
+                                            
                                             <Link 
                                                 href={`/facilities/${facility.healthFacilityId}`}
                                                 style={{ 

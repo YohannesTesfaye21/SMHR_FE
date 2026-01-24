@@ -5,7 +5,7 @@ import { MapPin, Building2, Clock, CheckCircle } from 'lucide-react';
 import { HealthFacilityDTO } from '@/types/apiTypes';
 
 export default function FacilityCard({ facility }: { facility: HealthFacilityDTO }) {
-  const isOpen = facility.operationalStatus === 'Operational';
+  const isOpen = facility.operationalStatus?.statusName === 'Operational';
 
   return (
     <Link href={`/facilities/${facility.healthFacilityId}`} style={{ display: 'block' }}>
@@ -29,7 +29,7 @@ export default function FacilityCard({ facility }: { facility: HealthFacilityDTO
                     <Building2 size={20} />
                 </div>
                 <span className={isOpen ? 'badge badge-success' : 'badge badge-warning'}>
-                    {facility.operationalStatus || 'Unknown'}
+                    {facility.operationalStatus?.statusName || 'Unknown'}
                 </span>
             </div>
 
@@ -56,7 +56,7 @@ export default function FacilityCard({ facility }: { facility: HealthFacilityDTO
                     ) : (
                         <>
                             <Clock size={16} color="orange" />
-                            <span style={{ color: 'orange' }}>{facility.operationalStatus}</span>
+                            <span style={{ color: 'orange' }}>{facility.operationalStatus?.statusName}</span>
                         </>
                     )}
                 </div>

@@ -6,7 +6,7 @@ import FacilityCard from '@/components/FacilityCard';
 import FilterPanelWrapper from '@/components/FilterPanelWrapper';
 import { Search, RotateCw, Map, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FacilityFilterParams, HealthFacilityDTO } from '@/types/apiTypes';
-import { useFacilities, useRegions, useDistricts, useFacilityTypes } from '@/hooks/useFacilities';
+import { useFacilities, useRegions, useDistricts, useFacilityTypes, useOwnerships, useOperationalStatuses } from '@/hooks/useFacilities';
 
 // Dynamic import for Map
 import dynamic from 'next/dynamic';
@@ -23,8 +23,8 @@ export default function FacilitiesPage({
     regionId?: string; 
     districtId?: string; 
     facilityTypeId?: string; 
-    ownership?: string; 
-    operationalStatus?: string;
+    ownershipId?: string; 
+    operationalStatusId?: string;
     pageNumber?: string;
     pageSize?: string;
   };
@@ -38,8 +38,8 @@ export default function FacilitiesPage({
     regionId: searchParams.regionId ? Number(searchParams.regionId) : undefined,
     districtId: searchParams.districtId ? Number(searchParams.districtId) : undefined,
     facilityTypeId: searchParams.facilityTypeId ? Number(searchParams.facilityTypeId) : undefined,
-    ownership: searchParams.ownership,
-    operationalStatus: searchParams.operationalStatus,
+    ownershipId: searchParams.ownershipId ? Number(searchParams.ownershipId) : undefined,
+    operationalStatusId: searchParams.operationalStatusId ? Number(searchParams.operationalStatusId) : undefined,
     pageNumber: searchParams.pageNumber ? Number(searchParams.pageNumber) : 1,
     pageSize: searchParams.pageSize ? Number(searchParams.pageSize) : 10
   };
@@ -54,6 +54,8 @@ export default function FacilitiesPage({
   const { data: regionsData } = useRegions();
   const { data: districtsData } = useDistricts(filters.regionId);
   const { data: typesData } = useFacilityTypes();
+  const { data: ownershipsData } = useOwnerships();
+  const { data: operationalStatusesData } = useOperationalStatuses();
 
   const facilities = facilitiesData?.data?.items || [];
   const totalCount = facilitiesData?.data?.totalCount || 0;
@@ -62,8 +64,8 @@ export default function FacilitiesPage({
     regions: (regionsData?.data?.items || []).map(r => ({ id: r.regionId, name: r.regionName })),
     districts: (districtsData?.data?.items || []).map(d => ({ id: d.districtId, name: d.districtName })),
     types: (typesData?.data?.items || []).map(t => ({ id: t.facilityTypeId, name: t.typeName })),
-    owners: ['Government', 'Private', 'NGO', 'Other'],
-    statuses: ['Operational', 'Closed', 'Pending']
+    owners: (ownershipsData?.data?.items || []).map(o => ({ id: o.ownershipId, name: o.ownershipType })),
+    statuses: (operationalStatusesData?.data?.items || []).map(s => ({ id: s.operationalStatusId, name: s.statusName }))
   };
 
   if (facilitiesError) {

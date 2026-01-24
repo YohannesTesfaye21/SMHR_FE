@@ -574,7 +574,7 @@ export default function AdminPage() {
                         {facility.facilityType?.typeName || 'N/A'}
                       </td>
                       <td style={{ padding: '1rem', color: 'var(--gray-700)' }}>
-                        {facility.ownership || 'N/A'}
+                        {facility.ownership?.ownershipType || 'N/A'}
                       </td>
                       <td style={{ padding: '1rem' }}>
                         <span style={{
@@ -582,18 +582,18 @@ export default function AdminPage() {
                           borderRadius: '999px',
                           fontSize: '0.75rem',
                           fontWeight: 600,
-                          background: facility.operationalStatus === 'Operational' 
+                          background: facility.operationalStatus?.statusName === 'Operational' 
                             ? '#D1FAE5' 
-                            : facility.operationalStatus === 'Closed'
+                            : facility.operationalStatus?.statusName === 'Closed'
                             ? '#FEE2E2'
                             : '#FEF3C7',
-                          color: facility.operationalStatus === 'Operational'
+                          color: facility.operationalStatus?.statusName === 'Operational'
                             ? '#065F46'
-                            : facility.operationalStatus === 'Closed'
+                            : facility.operationalStatus?.statusName === 'Closed'
                             ? '#991B1B'
                             : '#92400E'
                         }}>
-                          {facility.operationalStatus || 'Unknown'}
+                          {facility.operationalStatus?.statusName || 'Unknown'}
                         </span>
                       </td>
                       <td style={{ padding: '1rem', color: 'var(--gray-700)', fontSize: '0.875rem' }}>

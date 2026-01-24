@@ -24,8 +24,8 @@ export default function NewFacilityPage() {
     regionId: '',
     districtId: '',
     facilityTypeId: '',
-    ownership: '',
-    operationalStatus: '',
+    ownershipId: '',
+    operationalStatusId: '',
     hcPartners: '',
     hcProjectEndDate: '',
     nutritionClusterPartners: '',
@@ -62,6 +62,16 @@ export default function NewFacilityPage() {
     queryFn: () => facilityService.getFacilityTypes(),
   });
 
+  const { data: ownershipsData } = useQuery({
+    queryKey: ['ownerships'],
+    queryFn: () => facilityService.getOwnerships(),
+  });
+
+  const { data: operationalStatusesData } = useQuery({
+    queryKey: ['operationalStatuses'],
+    queryFn: () => facilityService.getOperationalStatuses(),
+  });
+
   // Redirect if not authenticated
   React.useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -92,7 +102,7 @@ export default function NewFacilityPage() {
     setIsSubmitting(true);
 
     try {
-      // Prepare request body - matching the exact format from API (no healthFacilityId, no nested objects)
+      // Prepare request body - IDs for lookups (ownership, operationalStatus), districtId, facilityTypeId
       const requestBody: any = {
         facilityId: formData.facilityId || null,
         healthFacilityName: formData.healthFacilityName || null,
@@ -100,8 +110,8 @@ export default function NewFacilityPage() {
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
         districtId: formData.districtId ? Number(formData.districtId) : null,
         facilityTypeId: formData.facilityTypeId ? Number(formData.facilityTypeId) : null,
-        ownership: formData.ownership || null,
-        operationalStatus: formData.operationalStatus || null,
+        ownershipId: formData.ownershipId ? Number(formData.ownershipId) : null,
+        operationalStatusId: formData.operationalStatusId ? Number(formData.operationalStatusId) : null,
         hcPartners: formData.hcPartners || null,
         hcProjectEndDate: formData.hcProjectEndDate || null,
         nutritionClusterPartners: formData.nutritionClusterPartners || null,
@@ -167,6 +177,8 @@ export default function NewFacilityPage() {
   const regions = regionsData?.data?.items || [];
   const districts = districtsData?.data?.items || [];
   const facilityTypes = facilityTypesData?.data?.items || [];
+  const ownerships = ownershipsData?.data?.items || [];
+  const operationalStatuses = operationalStatusesData?.data?.items || [];
 
   return (
     <div style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
@@ -450,8 +462,8 @@ export default function NewFacilityPage() {
                   Ownership
                 </label>
                 <select
-                  name="ownership"
-                  value={formData.ownership}
+                  name="ownershipId"
+                  value={formData.ownershipId}
                   onChange={handleChange}
                   style={{
                     width: '100%',
@@ -464,10 +476,9 @@ export default function NewFacilityPage() {
                   }}
                 >
                   <option value="">Select Ownership</option>
-                  <option value="Government">Government</option>
-                  <option value="Private">Private</option>
-                  <option value="NGO">NGO</option>
-                  <option value="Other">Other</option>
+                  {ownerships.map((o: { ownershipId: number; ownershipType: string }) => (
+                    <option key={o.ownershipId} value={o.ownershipId}>{o.ownershipType}</option>
+                  ))}
                 </select>
               </div>
 
@@ -476,8 +487,8 @@ export default function NewFacilityPage() {
                   Operational Status
                 </label>
                 <select
-                  name="operationalStatus"
-                  value={formData.operationalStatus}
+                  name="operationalStatusId"
+                  value={formData.operationalStatusId}
                   onChange={handleChange}
                   style={{
                     width: '100%',
@@ -490,9 +501,9 @@ export default function NewFacilityPage() {
                   }}
                 >
                   <option value="">Select Status</option>
-                  <option value="Operational">Operational</option>
-                  <option value="Closed">Closed</option>
-                  <option value="Pending">Pending</option>
+                  {operationalStatuses.map((s: { operationalStatusId: number; statusName: string }) => (
+                    <option key={s.operationalStatusId} value={s.operationalStatusId}>{s.statusName}</option>
+                  ))}
                 </select>
               </div>
             </div>

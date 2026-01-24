@@ -6,9 +6,12 @@ import {
   RegionApiPagedResponse,
   DistrictApiPagedResponse,
   FacilityTypeApiPagedResponse,
+  OwnershipApiPagedResponse,
+  OperationalStatusApiPagedResponse,
   StateApiPagedResponse,
   CardDataApiResponse,
   ChartDataListApiResponse,
+  DashboardStatisticsApiResponse,
   StateStatisticsListApiResponse,
   TopRegionListApiResponse,
   ApiResponse,
@@ -16,10 +19,14 @@ import {
   RegionApiResponse,
   DistrictApiResponse,
   FacilityTypeApiResponse,
+  OwnershipApiResponse,
+  OperationalStatusApiResponse,
   State,
   Region,
   District,
-  FacilityType
+  FacilityType,
+  Ownership,
+  OperationalStatus
 } from '@/types/apiTypes';
 
 export const facilityService = {
@@ -52,6 +59,16 @@ export const facilityService = {
     return apiClient.get<any, FacilityTypeApiPagedResponse>('/api/LookupTables/facility-types', { params: queryParams });
   },
 
+  getOwnerships: async (params?: { searchTerm?: string; pageNumber?: number; pageSize?: number }) => {
+    const queryParams = { pageSize: 100, ...params };
+    return apiClient.get<any, OwnershipApiPagedResponse>('/api/LookupTables/ownerships', { params: queryParams });
+  },
+
+  getOperationalStatuses: async (params?: { searchTerm?: string; pageNumber?: number; pageSize?: number }) => {
+    const queryParams = { pageSize: 100, ...params };
+    return apiClient.get<any, OperationalStatusApiPagedResponse>('/api/LookupTables/operational-statuses', { params: queryParams });
+  },
+
   // Dashboard APIs
   getDashboardCards: async () => {
     return apiClient.get<any, CardDataApiResponse>('/api/Dashboard/cards');
@@ -74,6 +91,14 @@ export const facilityService = {
 
   getTopRegions: async () => {
     return apiClient.get<any, TopRegionListApiResponse>('/api/Dashboard/top-regions');
+  },
+
+  getDashboardStatistics: async (params?: { stateId?: number; regionId?: number; districtId?: number }) => {
+    const queryParams: Record<string, number> = {};
+    if (params?.stateId != null) queryParams.stateId = params.stateId;
+    if (params?.regionId != null) queryParams.regionId = params.regionId;
+    if (params?.districtId != null) queryParams.districtId = params.districtId;
+    return apiClient.get<any, DashboardStatisticsApiResponse>('/api/Dashboard/statistics', { params: Object.keys(queryParams).length ? queryParams : undefined });
   },
 
   // Admin APIs - Create, Update, Delete
@@ -135,5 +160,27 @@ export const facilityService = {
   },
   deleteFacilityType: async (id: number) => {
     return apiClient.delete<any, ApiResponse<null>>(`/api/LookupTables/facility-types/${id}`);
-  }
+  },
+
+  // Ownership CRUD
+  createOwnership: async (data: Partial<Ownership>) => {
+    return apiClient.post<any, OwnershipApiResponse>('/api/LookupTables/ownerships', data);
+  },
+  updateOwnership: async (id: number, data: Partial<Ownership>) => {
+    return apiClient.put<any, ApiResponse<null>>(`/api/LookupTables/ownerships/${id}`, data);
+  },
+  deleteOwnership: async (id: number) => {
+    return apiClient.delete<any, ApiResponse<null>>(`/api/LookupTables/ownerships/${id}`);
+  },
+
+  // Operational Status CRUD
+  createOperationalStatus: async (data: Partial<OperationalStatus>) => {
+    return apiClient.post<any, OperationalStatusApiResponse>('/api/LookupTables/operational-statuses', data);
+  },
+  updateOperationalStatus: async (id: number, data: Partial<OperationalStatus>) => {
+    return apiClient.put<any, ApiResponse<null>>(`/api/LookupTables/operational-statuses/${id}`, data);
+  },
+  deleteOperationalStatus: async (id: number) => {
+    return apiClient.delete<any, ApiResponse<null>>(`/api/LookupTables/operational-statuses/${id}`);
+  },
 };

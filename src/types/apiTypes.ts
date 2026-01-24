@@ -89,8 +89,8 @@ export interface FacilityFilterParams {
   stateId?: number;
   regionId?: number;
   districtId?: number;
-  ownership?: string;
-  operationalStatus?: string;
+  ownershipId?: number;
+  operationalStatusId?: number;
   pageNumber?: number;
   pageSize?: number;
 }
@@ -101,12 +101,15 @@ export type HealthFacilityDTOApiResponse = ApiResponse<HealthFacilityDTO>;
 export type RegionApiPagedResponse = ApiResponse<PagedResponse<Region>>;
 export type DistrictApiPagedResponse = ApiResponse<PagedResponse<District>>;
 export type FacilityTypeApiPagedResponse = ApiResponse<PagedResponse<FacilityType>>;
+export type OwnershipApiPagedResponse = ApiResponse<PagedResponse<Ownership>>;
+export type OperationalStatusApiPagedResponse = ApiResponse<PagedResponse<OperationalStatus>>;
 export type StateApiPagedResponse = ApiResponse<PagedResponse<State>>;
-
 export type StateApiResponse = ApiResponse<State>;
 export type RegionApiResponse = ApiResponse<Region>;
 export type DistrictApiResponse = ApiResponse<District>;
 export type FacilityTypeApiResponse = ApiResponse<FacilityType>;
+export type OwnershipApiResponse = ApiResponse<Ownership>;
+export type OperationalStatusApiResponse = ApiResponse<OperationalStatus>;
 
 // Dashboard Types
 export interface CardDataDTO {
@@ -145,8 +148,27 @@ export interface TopRegionDTO {
   facilityCount: number;
 }
 
+export interface DashboardStatisticsByFacilityType {
+  facilityTypeId: number;
+  typeName: string;
+  count: number;
+}
+
+export interface DashboardStatisticsByOperationalStatus {
+  operationalStatusId: number;
+  statusName: string;
+  count: number;
+}
+
+export interface DashboardStatisticsDTO {
+  totalFacilities: number;
+  byFacilityType: DashboardStatisticsByFacilityType[];
+  byOperationalStatus: DashboardStatisticsByOperationalStatus[];
+}
+
 // Dashboard Responses
 export type CardDataApiResponse = ApiResponse<CardDataDTO>;
+export type DashboardStatisticsApiResponse = ApiResponse<DashboardStatisticsDTO>;
 export type ChartDataListApiResponse = ApiResponse<ChartDataDTO[]>;
 export type StateStatisticsListApiResponse = ApiResponse<StateStatisticsDTO[]>;
 export type TopRegionListApiResponse = ApiResponse<TopRegionDTO[]>;

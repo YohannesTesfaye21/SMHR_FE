@@ -1,14 +1,5 @@
-import Hero from "@/components/Hero";
-import StatsDashboard from "@/components/StatsDashboard";
-import Link from 'next/link';
-
-import HomeMapSection from "@/components/HomeMapSection";
+import HomePageWithFilter from "@/components/HomePageWithFilter";
 
 export default function Home() {
-  return (
-    <div>
-      <Hero />
-      <HomeMapSection />
-    </div>
-  );
+  return <HomePageWithFilter />;
 }

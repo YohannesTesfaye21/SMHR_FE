@@ -1,21 +1,16 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Building2, MapPin, Award, ChevronDown, ChevronUp, Layers, Search, RotateCw, Map } from 'lucide-react';
-import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, AreaChart, Area } from 'recharts';
-import { useDashboardCards, useDashboardCharts, useDashboardStateStats, useTopRegions } from '@/hooks/useDashboard';
-import { StateStatisticsDTO } from '@/types/apiTypes';
+import React, { useState } from 'react';
+import { Building2, CheckCircle, XCircle, AlertCircle, RotateCw, FileSpreadsheet, MapPin, ChevronUp, ChevronDown } from 'lucide-react';
+import { useDashboardStatistics } from '@/hooks/useDashboard';
+import type { DashboardStatisticsDTO, StateStatisticsDTO } from '@/types/apiTypes';
 
-// Premium color palette
-const COLORS = {
-  primary: ['#4189DD', '#36a4f9', '#7cc2fb', '#026aa2', '#025583', '#06486c'],
-  gradient: {
-    blue: ['#4189DD', '#026aa2'],
-    teal: ['#0d9488', '#0f766e'],
-    purple: ['#8b5cf6', '#6d28d9'],
-    orange: ['#f97316', '#c2410c'],
-  }
-};
+const STAT_COLORS = {
+  total: { bg: 'linear-gradient(135deg, #4C86E4 0%, #3b6bb5 100%)', shadow: 'rgba(76, 134, 228, 0.35)' },
+  operational: { bg: '#DCFCE7', fg: '#166534', icon: '#22c55e' },
+  closed: { bg: '#FEE2E2', fg: '#991b1b', icon: '#ef4444' },
+  gap: { bg: '#FEF9C3', fg: '#854d0e', icon: '#eab308' },
+} as const;
 
 // Animated Counter with easing
 function AnimatedCounter({ end, duration = 2000, suffix = '' }: { end: number; duration?: number; suffix?: string }) {

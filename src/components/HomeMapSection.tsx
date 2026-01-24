@@ -1,9 +1,10 @@
 "use client";
 
 import React from 'react';
-import { MapPin, RotateCw, ArrowRight } from 'lucide-react';
-import { useFacilities } from '@/hooks/useFacilities';
 import Link from 'next/link';
+import { RotateCw, ChevronRight } from 'lucide-react';
+import { useFacilities } from '@/hooks/useFacilities';
+import type { HomeFilter } from '@/hooks/useDashboard';
 
 // Dynamically import the map component to avoid SSR issues
 import dynamic from 'next/dynamic';
@@ -25,17 +26,19 @@ const FacilitiesMap = dynamic(() => import('@/components/FacilitiesMap'), {
   )
 });
 
-export default function HomeMapSection() {
-  // Fetch all facilities (up to 1000) for the map
-  const { 
-    data: facilitiesData, 
-    isLoading, 
-    error,
-    refetch 
-  } = useFacilities({ pageSize: 1000 });
+interface HomeMapSectionProps {
+  filter?: HomeFilter | null;
+}
 
+export default function HomeMapSection({ filter }: HomeMapSectionProps) {
+  const params = {
+    pageSize: 1000,
+    ...(filter?.stateId != null && { stateId: filter.stateId }),
+    ...(filter?.regionId != null && { regionId: filter.regionId }),
+    ...(filter?.districtId != null && { districtId: filter.districtId }),
+  };
+  const { data: facilitiesData, isLoading, error, refetch } = useFacilities(params);
   const facilities = facilitiesData?.data?.items || [];
-  const facilityCount = facilities.length;
 
   if (error) {
     // Ideally we might want to just show nothing or a retry button without breaking the homepage flow
@@ -80,7 +83,30 @@ export default function HomeMapSection() {
           </Link>
         </div> */}
 
-        <div className="glass" style={{ padding: '1rem', borderRadius: '24px', background: 'white', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.05)' }}>
+        <div className="glass" style={{ position: 'relative', padding: '1rem', borderRadius: '24px', background: 'white', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.05)' }}>
+          <Link
+            href="/facilities"
+            style={{
+              position: 'absolute',
+              top: '0.75rem',
+              right: '0.75rem',
+              zIndex: 10,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '0.35rem 0.65rem',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: 'white',
+              background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))',
+              borderRadius: '999px',
+              boxShadow: '0 2px 8px rgba(65, 137, 221, 0.3)',
+              textDecoration: 'none',
+            }}
+          >
+            Browse All Facilities
+            <ChevronRight size={14} strokeWidth={2.5} />
+          </Link>
           {isLoading ? (
              <div style={{ height: '600px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
                  <div style={{ textAlign: 'center' }}>

@@ -28,3 +28,19 @@ export const useTopRegions = () => {
         queryFn: facilityService.getTopRegions
     });
 };
+
+export interface HomeFilter {
+    stateId: number | null;
+    regionId: number | null;
+    districtId: number | null;
+}
+
+export const useDashboardStatistics = (filter?: HomeFilter | null) => {
+    const params = filter && (filter.stateId != null || filter.regionId != null || filter.districtId != null)
+        ? { stateId: filter.stateId ?? undefined, regionId: filter.regionId ?? undefined, districtId: filter.districtId ?? undefined }
+        : undefined;
+    return useQuery({
+        queryKey: ['dashboard', 'statistics', params],
+        queryFn: () => facilityService.getDashboardStatistics(params)
+    });
+};

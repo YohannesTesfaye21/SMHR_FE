@@ -4,25 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
+import 'react-leaflet-cluster/dist/assets/MarkerCluster.css';
+import 'react-leaflet-cluster/dist/assets/MarkerCluster.Default.css';
 import L from 'leaflet';
 import Link from 'next/link';
 import { HealthFacilityDTO } from '@/types/apiTypes';
 import { ArrowRight } from 'lucide-react';
-
-// Generate a consistent color from a string (state name)
-function stringToColor(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    // Generate HSL color with good saturation and lightness for visibility
-    const hue = Math.abs(hash % 360);
-    const saturation = 65 + (Math.abs(hash) % 20); // 65-85%
-    const lightness = 45 + (Math.abs(hash >> 8) % 15); // 45-60%
-    
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-}
+import { stringToColor } from '@/lib/colors';
 
 // Create custom marker icon with state color
 function createColoredIcon(color: string): L.DivIcon {

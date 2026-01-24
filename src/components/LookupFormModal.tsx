@@ -10,7 +10,7 @@ import { RotateCw } from 'lucide-react';
 interface LookupFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'states' | 'regions' | 'districts' | 'types';
+  type: 'states' | 'regions' | 'districts' | 'types' | 'ownerships' | 'operationalStatuses';
   item?: any;
   onSuccess: () => void;
 }
@@ -63,9 +63,18 @@ export default function LookupFormModal({
           if (isEdit) response = await facilityService.updateFacilityType(item.facilityTypeId, formData);
           else response = await facilityService.createFacilityType(formData);
           break;
+        case 'ownerships':
+          if (isEdit) response = await facilityService.updateOwnership(item.ownershipId, formData);
+          else response = await facilityService.createOwnership(formData);
+          break;
+        case 'operationalStatuses':
+          if (isEdit) response = await facilityService.updateOperationalStatus(item.operationalStatusId, formData);
+          else response = await facilityService.createOperationalStatus(formData);
+          break;
       }
 
-      showNotification(`${type.slice(0, -1)} ${isEdit ? 'updated' : 'created'} successfully`, 'success');
+      const label = type === 'types' ? 'Facility type' : type === 'ownerships' ? 'Ownership' : type === 'operationalStatuses' ? 'Operational status' : type.slice(0, -1).replace('ie', 'y');
+      showNotification(`${label} ${isEdit ? 'updated' : 'created'} successfully`, 'success');
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -77,8 +86,34 @@ export default function LookupFormModal({
   };
 
   const getTitle = () => {
-    const label = type === 'types' ? 'Facility Type' : type.slice(0, -1).replace('ie', 'y');
+    const label = type === 'types' ? 'Facility Type' : type === 'ownerships' ? 'Ownership' : type === 'operationalStatuses' ? 'Operational Status' : type.slice(0, -1).replace('ie', 'y');
     return `${isEdit ? 'Edit' : 'Add New'} ${label}`;
+  };
+
+  const getFieldLabel = () => {
+    if (type === 'types') return 'Type Name';
+    if (type === 'ownerships') return 'Ownership Type';
+    if (type === 'operationalStatuses') return 'Status Name';
+    return `${type.slice(0, -1).replace('ie', 'y')} Name`;
+  };
+
+  const getFieldValue = () => {
+    if (type === 'states') return formData.stateName || '';
+    if (type === 'regions') return formData.regionName || '';
+    if (type === 'districts') return formData.districtName || '';
+    if (type === 'types') return formData.typeName || '';
+    if (type === 'ownerships') return formData.ownershipType || '';
+    if (type === 'operationalStatuses') return formData.statusName || '';
+    return '';
+  };
+
+  const setFieldValue = (val: string) => {
+    if (type === 'states') setFormData({ ...formData, stateName: val });
+    else if (type === 'regions') setFormData({ ...formData, regionName: val });
+    else if (type === 'districts') setFormData({ ...formData, districtName: val });
+    else if (type === 'types') setFormData({ ...formData, typeName: val });
+    else if (type === 'ownerships') setFormData({ ...formData, ownershipType: val });
+    else if (type === 'operationalStatuses') setFormData({ ...formData, statusName: val });
   };
 
   return (
@@ -87,7 +122,7 @@ export default function LookupFormModal({
         {/* Name Field */}
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--gray-700)' }}>
-            {type === 'types' ? 'Type Name' : `${type.slice(0, -1).replace('ie', 'y')} Name`}
+            {getFieldLabel()}
           </label>
           <input
             type="text"
@@ -101,17 +136,8 @@ export default function LookupFormModal({
               fontSize: '0.95rem',
               outline: 'none'
             }}
-            value={type === 'states' ? (formData.stateName || '') : 
-                   type === 'regions' ? (formData.regionName || '') : 
-                   type === 'districts' ? (formData.districtName || '') : 
-                   (formData.typeName || '')}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (type === 'states') setFormData({ ...formData, stateName: val });
-              else if (type === 'regions') setFormData({ ...formData, regionName: val });
-              else if (type === 'districts') setFormData({ ...formData, districtName: val });
-              else if (type === 'types') setFormData({ ...formData, typeName: val });
-            }}
+            value={getFieldValue()}
+            onChange={(e) => setFieldValue(e.target.value)}
           />
         </div>
 

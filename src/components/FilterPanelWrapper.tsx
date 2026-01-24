@@ -9,8 +9,8 @@ type FilterOptions = {
     regions: FilterOptionItem[];
     districts: FilterOptionItem[];
     types: FilterOptionItem[];
-    owners: string[];
-    statuses: string[];
+    owners: FilterOptionItem[];
+    statuses: FilterOptionItem[];
 };
 
 export default function FilterPanelWrapper({ 

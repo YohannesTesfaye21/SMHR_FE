@@ -37,8 +37,8 @@ export default function EditFacilityPage() {
     regionId: '',
     districtId: '',
     facilityTypeId: '',
-    ownership: '',
-    operationalStatus: '',
+    ownershipId: '',
+    operationalStatusId: '',
     hcPartners: '',
     hcProjectEndDate: '',
     nutritionClusterPartners: '',
@@ -75,12 +75,22 @@ export default function EditFacilityPage() {
     queryFn: () => facilityService.getFacilityTypes(),
   });
 
+  const { data: ownershipsData } = useQuery({
+    queryKey: ['ownerships'],
+    queryFn: () => facilityService.getOwnerships(),
+  });
+
+  const { data: operationalStatusesData } = useQuery({
+    queryKey: ['operationalStatuses'],
+    queryFn: () => facilityService.getOperationalStatuses(),
+  });
+
   // Populate form when facility data loads
   useEffect(() => {
     if (facility && !isFormLoaded) {
       const district = facility.district;
       const stateId = district?.region?.state?.stateId;
-      const regionId = district?.regionId;
+      const regionId = district?.region?.regionId;
 
       setFormData({
         facilityId: facility.facilityId || '',
@@ -91,8 +101,8 @@ export default function EditFacilityPage() {
         regionId: regionId?.toString() || '',
         districtId: facility.district?.districtId?.toString() || '',
         facilityTypeId: facility.facilityType?.facilityTypeId?.toString() || '',
-        ownership: facility.ownership?.ownershipType || '',
-        operationalStatus: facility.operationalStatus?.statusName || '',
+        ownershipId: facility.ownership?.ownershipId?.toString() || '',
+        operationalStatusId: facility.operationalStatus?.operationalStatusId?.toString() || '',
         hcPartners: facility.hcPartners || '',
         hcProjectEndDate: facility.hcProjectEndDate ? facility.hcProjectEndDate.split('T')[0] : '',
         nutritionClusterPartners: facility.nutritionClusterPartners || '',
@@ -120,15 +130,12 @@ export default function EditFacilityPage() {
     const { name, value } = e.target;
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
-      
-      // Reset dependent dropdowns when parent changes
       if (name === 'stateId') {
         updated.regionId = '';
         updated.districtId = '';
       } else if (name === 'regionId') {
         updated.districtId = '';
       }
-      
       return updated;
     });
   };
@@ -139,7 +146,7 @@ export default function EditFacilityPage() {
     setIsSubmitting(true);
 
     try {
-      // Prepare request body - matching the exact format from API (same as create)
+      // Prepare request body - IDs for lookups (ownership, operationalStatus), districtId, facilityTypeId
       const requestBody: any = {
         facilityId: formData.facilityId || null,
         healthFacilityName: formData.healthFacilityName || null,
@@ -147,8 +154,8 @@ export default function EditFacilityPage() {
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
         districtId: formData.districtId ? Number(formData.districtId) : null,
         facilityTypeId: formData.facilityTypeId ? Number(formData.facilityTypeId) : null,
-        ownership: formData.ownership || null,
-        operationalStatus: formData.operationalStatus || null,
+        ownershipId: formData.ownershipId ? Number(formData.ownershipId) : null,
+        operationalStatusId: formData.operationalStatusId ? Number(formData.operationalStatusId) : null,
         hcPartners: formData.hcPartners || null,
         hcProjectEndDate: formData.hcProjectEndDate || null,
         nutritionClusterPartners: formData.nutritionClusterPartners || null,
@@ -227,6 +234,8 @@ export default function EditFacilityPage() {
   const regions = regionsData?.data?.items || [];
   const districts = districtsData?.data?.items || [];
   const facilityTypes = facilityTypesData?.data?.items || [];
+  const ownerships = ownershipsData?.data?.items || [];
+  const operationalStatuses = operationalStatusesData?.data?.items || [];
 
   return (
     <div style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
@@ -510,8 +519,8 @@ export default function EditFacilityPage() {
                   Ownership
                 </label>
                 <select
-                  name="ownership"
-                  value={formData.ownership}
+                  name="ownershipId"
+                  value={formData.ownershipId}
                   onChange={handleChange}
                   style={{
                     width: '100%',
@@ -524,10 +533,9 @@ export default function EditFacilityPage() {
                   }}
                 >
                   <option value="">Select Ownership</option>
-                  <option value="Government">Government</option>
-                  <option value="Private">Private</option>
-                  <option value="NGO">NGO</option>
-                  <option value="Other">Other</option>
+                  {ownerships.map((o: { ownershipId: number; ownershipType: string }) => (
+                    <option key={o.ownershipId} value={o.ownershipId}>{o.ownershipType}</option>
+                  ))}
                 </select>
               </div>
 
@@ -536,8 +544,8 @@ export default function EditFacilityPage() {
                   Operational Status
                 </label>
                 <select
-                  name="operationalStatus"
-                  value={formData.operationalStatus}
+                  name="operationalStatusId"
+                  value={formData.operationalStatusId}
                   onChange={handleChange}
                   style={{
                     width: '100%',
@@ -550,9 +558,9 @@ export default function EditFacilityPage() {
                   }}
                 >
                   <option value="">Select Status</option>
-                  <option value="Operational">Operational</option>
-                  <option value="Closed">Closed</option>
-                  <option value="Pending">Pending</option>
+                  {operationalStatuses.map((s: { operationalStatusId: number; statusName: string }) => (
+                    <option key={s.operationalStatusId} value={s.operationalStatusId}>{s.statusName}</option>
+                  ))}
                 </select>
               </div>
             </div>

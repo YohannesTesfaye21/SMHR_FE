@@ -8,15 +8,17 @@ import {
   useRegions, 
   useDistricts, 
   useFacilityTypes,
-  useStates 
+  useStates,
+  useOwnerships,
+  useOperationalStatuses
 } from '@/hooks/useFacilities';
 import { facilityService } from '@/services/facilityService';
-import { Plus, Edit, Trash2, MapPin, LayoutGrid, ChevronRight, ChevronLeft, Search, ArrowLeft, RotateCw } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, LayoutGrid, ChevronRight, ChevronLeft, Search, ArrowLeft, RotateCw, Briefcase, CheckCircle } from 'lucide-react';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import Modal from '@/components/Modal';
 import LookupFormModal from '@/components/LookupFormModal';
 
-type LookupTab = 'states' | 'regions' | 'districts' | 'types';
+type LookupTab = 'states' | 'regions' | 'districts' | 'types' | 'ownerships' | 'operationalStatuses';
 
 export default function LookupManagementPage() {
   const router = useRouter();
@@ -57,6 +59,8 @@ export default function LookupManagementPage() {
   const { data: regionsData, isLoading: regionsLoading, refetch: refetchRegions } = (useRegions as any)(undefined, { searchTerm: debouncedSearch, pageNumber, pageSize }, { enabled: activeTab === 'regions' });
   const { data: districtsData, isLoading: districtsLoading, refetch: refetchDistricts } = (useDistricts as any)(undefined, { searchTerm: debouncedSearch, pageNumber, pageSize }, { enabled: activeTab === 'districts' });
   const { data: typesData, isLoading: typesLoading, refetch: refetchTypes } = (useFacilityTypes as any)({ searchTerm: debouncedSearch, pageNumber, pageSize }, { enabled: activeTab === 'types' });
+  const { data: ownershipsData, isLoading: ownershipsLoading, refetch: refetchOwnerships } = (useOwnerships as any)({ searchTerm: debouncedSearch, pageNumber, pageSize }, { enabled: activeTab === 'ownerships' });
+  const { data: operationalStatusesData, isLoading: operationalStatusesLoading, refetch: refetchOperationalStatuses } = (useOperationalStatuses as any)({ searchTerm: debouncedSearch, pageNumber, pageSize }, { enabled: activeTab === 'operationalStatuses' });
 
   if (authLoading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
   if (!isAuthenticated) {
@@ -68,7 +72,9 @@ export default function LookupManagementPage() {
     (activeTab === 'states' && statesLoading) || 
     (activeTab === 'regions' && regionsLoading) || 
     (activeTab === 'districts' && districtsLoading) || 
-    (activeTab === 'types' && typesLoading);
+    (activeTab === 'types' && typesLoading) ||
+    (activeTab === 'ownerships' && ownershipsLoading) ||
+    (activeTab === 'operationalStatuses' && operationalStatusesLoading);
 
   // Get items based on active tab
   const getItems = () => {
@@ -77,6 +83,8 @@ export default function LookupManagementPage() {
       case 'regions': return (regionsData as any)?.data?.items || [];
       case 'districts': return (districtsData as any)?.data?.items || [];
       case 'types': return (typesData as any)?.data?.items || [];
+      case 'ownerships': return (ownershipsData as any)?.data?.items || [];
+      case 'operationalStatuses': return (operationalStatusesData as any)?.data?.items || [];
       default: return [];
     }
   };
@@ -87,6 +95,8 @@ export default function LookupManagementPage() {
       case 'regions': return (regionsData as any)?.data;
       case 'districts': return (districtsData as any)?.data;
       case 'types': return (typesData as any)?.data;
+      case 'ownerships': return (ownershipsData as any)?.data;
+      case 'operationalStatuses': return (operationalStatusesData as any)?.data;
       default: return null;
     }
   };
@@ -123,6 +133,14 @@ export default function LookupManagementPage() {
           await facilityService.deleteFacilityType(itemToDelete.id);
           refetchTypes();
           break;
+        case 'ownerships':
+          await facilityService.deleteOwnership(itemToDelete.id);
+          refetchOwnerships();
+          break;
+        case 'operationalStatuses':
+          await facilityService.deleteOperationalStatus(itemToDelete.id);
+          refetchOperationalStatuses();
+          break;
       }
       showNotification(`${itemToDelete.name} deleted successfully`, 'success');
       setDeleteModalOpen(false);
@@ -140,10 +158,26 @@ export default function LookupManagementPage() {
     { id: 'regions', label: 'Regions', icon: <ChevronRight size={20} /> },
     { id: 'districts', label: 'Districts', icon: <ChevronRight size={20} /> },
     { id: 'types', label: 'Facility Types', icon: <LayoutGrid size={20} /> },
+    { id: 'ownerships', label: 'Ownership', icon: <Briefcase size={20} /> },
+    { id: 'operationalStatuses', label: 'Operational Status', icon: <CheckCircle size={20} /> },
   ];
 
   const getActiveTabLabel = () => {
-    return activeTab === 'types' ? 'Facility Type' : activeTab.slice(0, -1).replace('ie', 'y');
+    if (activeTab === 'types') return 'Facility Type';
+    if (activeTab === 'ownerships') return 'Ownership';
+    if (activeTab === 'operationalStatuses') return 'Operational Status';
+    return activeTab.slice(0, -1).replace('ie', 'y');
+  };
+
+  const getTableColSpan = () => {
+    if (activeTab === 'regions' || activeTab === 'districts') return 5;
+    return 4;
+  };
+
+  const getTabPluralLabel = () => {
+    if (activeTab === 'operationalStatuses') return 'operational statuses';
+    if (activeTab === 'ownerships') return 'ownership';
+    return activeTab;
   };
 
   return (
@@ -180,7 +214,7 @@ export default function LookupManagementPage() {
                 Lookup Management
               </h1>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-                Manage registry core data: States, Regions, Districts and Types
+                Manage registry core data: States, Regions, Districts, Types, Ownership and Operational Status
               </p>
             </div>
             
@@ -295,7 +329,7 @@ export default function LookupManagementPage() {
                 <tbody style={{ position: 'relative' }}>
                     {isLoading ? (
                         <tr>
-                            <td colSpan={6} style={{ padding: '4rem', textAlign: 'center' }}>
+                            <td colSpan={getTableColSpan()} style={{ padding: '4rem', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: 'var(--text-secondary)' }}>
                                     <RotateCw size={32} className="animate-spin" />
                                     <span>Loading {activeTab}...</span>
@@ -304,8 +338,8 @@ export default function LookupManagementPage() {
                         </tr>
                     ) : filteredItems.length > 0 ? (
                         filteredItems.map((item: any) => {
-                            const id = item.stateId || item.regionId || item.districtId || item.facilityTypeId;
-                            const name = item.stateName || item.regionName || item.districtName || item.typeName;
+                            const id = item.stateId ?? item.regionId ?? item.districtId ?? item.facilityTypeId ?? item.ownershipId ?? item.operationalStatusId;
+                            const name = item.stateName ?? item.regionName ?? item.districtName ?? item.typeName ?? item.ownershipType ?? item.statusName;
                             return (
                                 <tr key={id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }}>
                                     <td style={{ padding: '1.25rem 1.5rem', color: 'var(--gray-500)', fontSize: '0.9rem' }}>#{id}</td>
@@ -321,7 +355,7 @@ export default function LookupManagementPage() {
                                         </td>
                                     )}
                                     <td style={{ padding: '1.25rem 1.5rem', color: 'var(--gray-500)', fontSize: '0.9rem' }}>
-                                        {new Date(item.createdAt).toLocaleDateString()}
+                                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '—'}
                                     </td>
                                     <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
@@ -351,10 +385,10 @@ export default function LookupManagementPage() {
                         })
                     ) : (
                         <tr>
-                            <td colSpan={6} style={{ padding: '4rem', textAlign: 'center' }}>
+                            <td colSpan={getTableColSpan()} style={{ padding: '4rem', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: 'var(--gray-400)' }}>
                                     <Search size={48} style={{ opacity: 0.2 }} />
-                                    <h3>No {activeTab} found</h3>
+                                    <h3>No {activeTab.replace('operationalStatuses', 'operational statuses').replace('ownerships', 'ownership')} found</h3>
                                     <p>Try adjusting your search query.</p>
                                 </div>
                             </td>
@@ -376,7 +410,7 @@ export default function LookupManagementPage() {
                     flexWrap: 'wrap'
                 }}>
                     <div style={{ color: 'var(--gray-500)', fontSize: '0.875rem' }}>
-                        Showing <b>{(pageNumber - 1) * pageSize + 1}</b> to <b>{Math.min(pageNumber * pageSize, totalCount)}</b> of <b>{totalCount}</b> {activeTab}
+                        Showing <b>{(pageNumber - 1) * pageSize + 1}</b> to <b>{Math.min(pageNumber * pageSize, totalCount)}</b> of <b>{totalCount}</b> {getTabPluralLabel()}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -475,6 +509,8 @@ export default function LookupManagementPage() {
             case 'regions': refetchRegions(); break;
             case 'districts': refetchDistricts(); break;
             case 'types': refetchTypes(); break;
+            case 'ownerships': refetchOwnerships(); break;
+            case 'operationalStatuses': refetchOperationalStatuses(); break;
           }
         }}
       />

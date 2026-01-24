@@ -11,21 +11,21 @@ type FilterOptions = {
     regions: FilterOptionItem[];
     districts: FilterOptionItem[];
     types: FilterOptionItem[];
-    owners: string[];
-    statuses: string[];
+    owners: FilterOptionItem[];
+    statuses: FilterOptionItem[];
 };
 
 export default function FilterPanel({ options, isOpen, onClose }: { options: FilterOptions, isOpen: boolean, onClose: () => void }) {
     const router = useRouter();
     const searchParams = useSearchParams();
     
-    // Local state for filters
+    // Local state for filters (ownershipId, operationalStatusId are IDs from lookups)
     const [filters, setFilters] = useState({
         regionId: searchParams.get('regionId') || '',
         districtId: searchParams.get('districtId') || '',
         facilityTypeId: searchParams.get('facilityTypeId') || '',
-        ownership: searchParams.get('ownership') || '',
-        operationalStatus: searchParams.get('operationalStatus') || '',
+        ownershipId: searchParams.get('ownershipId') || '',
+        operationalStatusId: searchParams.get('operationalStatusId') || '',
     });
 
     const handleFilterChange = (key: string, value: string) => {
@@ -55,15 +55,15 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
             regionId: '',
             districtId: '',
             facilityTypeId: '',
-            ownership: '',
-            operationalStatus: ''
+            ownershipId: '',
+            operationalStatusId: ''
         });
         const params = new URLSearchParams(searchParams.toString());
         params.delete('regionId');
         params.delete('districtId');
         params.delete('facilityTypeId');
-        params.delete('ownership');
-        params.delete('operationalStatus');
+        params.delete('ownershipId');
+        params.delete('operationalStatusId');
         const q = params.get('q');
         if (q) {
              router.push(`/facilities?q=${q}`);
@@ -210,8 +210,8 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                             Ownership
                         </label>
                         <select
-                            value={filters.ownership}
-                            onChange={(e) => handleFilterChange('ownership', e.target.value)}
+                            value={filters.ownershipId}
+                            onChange={(e) => handleFilterChange('ownershipId', e.target.value)}
                             style={{
                                 width: '100%',
                                 padding: '0.5rem',
@@ -224,7 +224,7 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                         >
                             <option value="">All Owners</option>
                             {options.owners.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
+                                <option key={opt.id} value={opt.id}>{opt.name}</option>
                             ))}
                         </select>
                     </div>
@@ -234,8 +234,8 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                             Status
                         </label>
                         <select
-                            value={filters.operationalStatus}
-                            onChange={(e) => handleFilterChange('operationalStatus', e.target.value)}
+                            value={filters.operationalStatusId}
+                            onChange={(e) => handleFilterChange('operationalStatusId', e.target.value)}
                             style={{
                                 width: '100%',
                                 padding: '0.5rem',
@@ -248,7 +248,7 @@ export default function FilterPanel({ options, isOpen, onClose }: { options: Fil
                         >
                             <option value="">All Statuses</option>
                             {options.statuses.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
+                                <option key={opt.id} value={opt.id}>{opt.name}</option>
                             ))}
                         </select>
                     </div>

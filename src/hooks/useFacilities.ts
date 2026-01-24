@@ -6,7 +6,9 @@ import {
   StateApiPagedResponse,
   RegionApiPagedResponse,
   DistrictApiPagedResponse,
-  FacilityTypeApiPagedResponse
+  FacilityTypeApiPagedResponse,
+  OwnershipApiPagedResponse,
+  OperationalStatusApiPagedResponse
 } from '@/types/apiTypes';
 
 export const useFacilities = (params?: FacilityFilterParams): UseQueryResult<HealthFacilityDTOApiPagedResponse> => {
@@ -52,6 +54,22 @@ export const useStates = (params?: { searchTerm?: string; pageNumber?: number; p
   return useQuery<StateApiPagedResponse>({
     queryKey: ['states', params],
     queryFn: () => facilityService.getStates(params),
+    ...options
+  });
+};
+
+export const useOwnerships = (params?: { searchTerm?: string; pageNumber?: number; pageSize?: number }, options?: any): UseQueryResult<OwnershipApiPagedResponse> => {
+  return useQuery<OwnershipApiPagedResponse>({
+    queryKey: ['ownerships', params],
+    queryFn: () => facilityService.getOwnerships(params),
+    ...options
+  });
+};
+
+export const useOperationalStatuses = (params?: { searchTerm?: string; pageNumber?: number; pageSize?: number }, options?: any): UseQueryResult<OperationalStatusApiPagedResponse> => {
+  return useQuery<OperationalStatusApiPagedResponse>({
+    queryKey: ['operationalStatuses', params],
+    queryFn: () => facilityService.getOperationalStatuses(params),
     ...options
   });
 };

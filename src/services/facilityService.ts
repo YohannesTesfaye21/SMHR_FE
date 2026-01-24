@@ -1,7 +1,7 @@
 import apiClient from '@/lib/apiClient';
-import { 
-  HealthFacilityDTOApiPagedResponse, 
-  HealthFacilityDTOApiResponse, 
+import {
+  HealthFacilityDTOApiPagedResponse,
+  HealthFacilityDTOApiResponse,
   FacilityFilterParams,
   RegionApiPagedResponse,
   DistrictApiPagedResponse,
@@ -116,6 +116,12 @@ export const facilityService = {
 
   deleteAllFacilities: async () => {
     return apiClient.delete<any, any>('/api/HealthFacilities/all');
+  },
+
+  clearAllFacilities: async (includeUsers: boolean = false) => {
+    return apiClient.delete<any, any>('/api/HealthFacilities/clear-all', {
+      params: { includeUsers }
+    });
   },
 
   // State CRUD

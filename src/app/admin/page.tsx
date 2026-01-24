@@ -22,8 +22,10 @@ export default function AdminPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+  const [clearAllModalOpen, setClearAllModalOpen] = useState(false);
   const [facilityToDelete, setFacilityToDelete] = useState<{ id: number; name: string } | null>(null);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [includeUsers, setIncludeUsers] = useState(false);
 
   // Debounce search term to avoid too many API calls
   React.useEffect(() => {
@@ -146,12 +148,34 @@ export default function AdminPage() {
       refetch();
       setBulkDeleteModalOpen(false);
       
-      // Get message from API response if available
       const successMessage = (response as any)?.message || 'All facilities have been deleted successfully.';
       showNotification(successMessage, 'success');
     } catch (error: any) {
       console.error('Error deleting all facilities:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to delete all facilities. Please try again.';
+      showNotification(errorMessage, 'error');
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
+
+  const handleClearAllClick = () => {
+    setIncludeUsers(false);
+    setClearAllModalOpen(true);
+  };
+
+  const handleClearAllConfirm = async () => {
+    setIsDeletingAll(true);
+    try {
+      const response = await facilityService.clearAllFacilities(includeUsers);
+      refetch();
+      setClearAllModalOpen(false);
+      
+      const successMessage = (response as any)?.message || 'All facilities have been cleared successfully.';
+      showNotification(successMessage, 'success');
+    } catch (error: any) {
+      console.error('Error clearing all facilities:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to clear all facilities. Please try again.';
       showNotification(errorMessage, 'error');
     } finally {
       setIsDeletingAll(false);
@@ -280,6 +304,34 @@ export default function AdminPage() {
             </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleClearAllClick}
+                className="btn-danger"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  alignSelf: 'flex-start',
+                  background: 'white',
+                  border: '1px solid #FECACA',
+                  borderRadius: '12px',
+                  color: '#EA580C',
+                  fontWeight: 500,
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#FEF2F2';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white';
+                }}
+              >
+                <Trash2 size={20} />
+                Clear All
+              </button>
               <button
                 onClick={handleDeleteAllClick}
                 className="btn-danger"
@@ -757,7 +809,50 @@ export default function AdminPage() {
         onConfirm={handleDeleteAllConfirm}
         facilityName="ALL FACILITIES"
         isDeletingAll={isDeletingAll}
+        message="Are you sure you want to delete ALL facilities? This action cannot be undone."
       />
+
+      <DeleteConfirmModal
+        isOpen={clearAllModalOpen}
+        onClose={() => setClearAllModalOpen(false)}
+        onConfirm={handleClearAllConfirm}
+        facilityName="ALL FACILITIES"
+        isDeletingAll={isDeletingAll}
+        message="Are you sure you want to clear ALL facilities using the new clear method? This action cannot be undone."
+        title="Clear All Facilities"
+      >
+        <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.75rem',
+            cursor: 'pointer',
+            padding: '0.75rem',
+            background: includeUsers ? '#FEF2F2' : 'var(--gray-50)',
+            border: `1px solid ${includeUsers ? '#FECACA' : 'var(--border-color)'}`,
+            borderRadius: '8px',
+            transition: 'all 0.2s'
+          }}>
+            <input 
+              type="checkbox"
+              checked={includeUsers}
+              onChange={(e) => setIncludeUsers(e.target.checked)}
+              style={{
+                width: '18px',
+                height: '18px',
+                cursor: 'pointer'
+              }}
+            />
+            <span style={{ 
+              fontWeight: 500, 
+              color: includeUsers ? '#991B1B' : 'var(--gray-700)',
+              fontSize: '0.95rem' 
+            }}>
+              Also delete all associated users?
+            </span>
+          </label>
+        </div>
+      </DeleteConfirmModal>
     </div>
   );
 }

@@ -61,27 +61,128 @@ export default function BulkImportPage() {
 
   const downloadTemplate = () => {
     const headers = [
-      "New Facility ID", "Latitude", "Longitude", "State", "Region", "District", 
-      "Health Facility Name", "Health Facility Type", "Ownership", "HC partners", 
-      "HC Project End date", "Nutrition Cluster Partners", "Damal Caafimaad Partner", 
-      "Damal Caafimaad Project end date", "Better Life Project Partner", 
-      "Better Life Project End Date", "Caafimaad Plus Partner", 
-      "Caafimaad Plus Project end", "Facility In-charge Name", 
-      "Facility in-charge Number", "Operational Status"
+      "Date ",
+      "State",
+      "Region",
+      "District",
+      "Is your health facility included in the list below?\r\n      - If Yes: Select your facility from the list and continue completing the questionnaire.\r\n      - If No: Select “No”, enter the facility name, and continue completing the questionnaire",
+      "Name of health facility",
+      "Health Facility Code",
+      "Is the health facility currently operational and providing services to patients?",
+      "If No, what is the main reason the health facility is not operational?",
+      "When was the last date the health facility was operational?",
+      "Is the selected health facility name correct?",
+      "If no, enter the correct health facility name",
+      "If the health facility is not listed, enter the health facility name",
+      "Column10",
+      "Facility type",
+      "Full Name of the helath Facility in-charge",
+      "Job title of in-charge",
+      "Mobile number of the helath Facility in-charge",
+      "WhatsApp number of the helath Facility in-charge",
+      "Email adress of the health facility incharge ",
+      "Capture GPS location from within the health facility premises/compound.\r\nNote (Important): Capture the GPS coordinates while you are inside the health facility premises/compound. Stand in an open space within the compound where the device can clearly see t",
+      "Latitude",
+      "Longitude",
+      "Catchment population served (Total Population)",
+      "Under 1 year (surviving infants) Target for EPI for the HF",
+      "Do you know the geographical boundaries of the catchment area of this health facility?",
+      "Main type(s) of settlement/population served (select all that apply)",
+      "Number of settlements/villages served by the facility",
+      "Select all services that are currently provided at this health facility.",
+      "Services provided (PHU)",
+      "Services provided (Health Centre)",
+      "Services provided (District Hospital)",
+      "Services provided (Regional Hospital / National Hospital)",
+      "Key equipment available (PHU)",
+      "Key equipment available (Health Centre)",
+      "Key equipment available (District Hospital)",
+      "Key equipment available (Regional Hospital / National Hospital)",
+      "Select all staff cadres currently available at this health facility.",
+      "HR cadres available (PHU)",
+      "Total number of Community Health Worker (CHW)",
+      "Total number of Female Health Worker (FHW)",
+      "Total number of Nurse",
+      "Total number of Midwife",
+      "Total number of Health assistant",
+      "Total number of Vaccinator/EPI staff",
+      "Total number of Data clerk/HMIS",
+      "Total number of Other",
+      "HR cadres available (Health Centre)",
+      "Total number of Medical officer/Doctor",
+      "Total number of Nurse_1",
+      "Total number of Midwife_2",
+      "Total number of Laboratory technician",
+      "Total number of Pharmacy technician",
+      "Total number of Vaccinator/EPI staff_3",
+      "Total number of Data clerk/HMIS_4",
+      "Total number of CHW/FHW",
+      "Total number of Other_5",
+      "HR cadres available (District Hospital)",
+      "Total number of Doctor/Medical officer",
+      "Total number of Nurse_6",
+      "Total number of Midwife_7",
+      "Total number of Anaesthesia provider",
+      "Total number of Laboratory staff",
+      "Total number of Pharmacy staff",
+      "Total number of Radiology/Imaging staff",
+      "Total number of Surgical/Operating team",
+      "Total number of Data clerk/HMIS_8",
+      "Total number of Other_9",
+      "HR cadres available (Regional / National Hospital)",
+      "Total number of Specialist doctors",
+      "Total number of Medical officers",
+      "Total number of Nurses",
+      "Total number of Midwives",
+      "Total number of Anaesthesia team",
+      "Total number of Laboratory staff_10",
+      "Total number of Pharmacy staff_11",
+      "Total number of Radiology/Imaging staff_12",
+      "Total number of Surgical/Operating team_13",
+      "Total number of HMIS/Data team",
+      "Total number of Other_14",
+      "What is the estimated distance to the nearest referral facility (in kilometers)?",
+      "Does this health facility have designated Community Health Workers (CHWs) and/or Female Health Workers (FHWs)?",
+      "Is there a dedicated/ assigned persone to manage the HMIS at this facility?",
+      "If yes, name of HMIS reporter/data clerk",
+      "HMIS reporter telephone (WhatsApp)",
+      "HMIS reporter email",
+      "Does this health facility have complete and updated HMIS reporting tools?",
+      "Which HMIS tools are available and in use at this facility? (select all that apply)",
+      "Is the health facility reporting routine health information (HMIS) through DHIS2?",
+      "If yes, date the facility started reporting using DHIS2",
+      "How is routine data entered into DHIS2 for this facility?",
+      "Is the health facility using the IDSR system?",
+      "If yes, date the facility started using IDSR",
+      "Does this health facility have a surveillance reporting system for priority diseases/events?",
+      "Main water source(s)",
+      "Main power source(s)",
+      "Is internet available at the facility?",
+      "If yes, type of internet connection",
+      "ICT equipment available",
+      "Waste management methods available",
+      "Cold chain equipment available",
+      "Transport available",
+      "Photo of facility signboard (optional)",
+      "Photo of facility licence/certificate (optional)",
+      "Photo of Front the ",
+      "Any additional remarks / notes",
+      "Health Facility Photo"
     ];
     
-    // Sample row from sampleData.txt
-    const sampleRow = [
-      "BRBNABDU01", "2.040533", "45.356388", "BRA", "Benadir", "Abdul Aziz", 
-      "Abdi Aziz Health Center", "Health Center", "Government", "PSI & BRA", 
-      "3/31/2026", "AAH", "No", "No", "No", "No", "No", "No", 
-      "Amino Abdi Warsame", "615306618", "Operational"
-    ];
+    // sampleRow removed as per request
 
-    const csvContent = [
-      headers.join(','),
-      sampleRow.join(',')
-    ].join('\n');
+    // Helper to escape CSV fields
+    const escapeCsv = (field: string) => {
+      if (field === null || field === undefined) return '';
+      const stringField = String(field);
+      if (stringField.includes('"') || stringField.includes(',') || stringField.includes('\n') || stringField.includes('\r')) {
+        return `"${stringField.replace(/"/g, '""')}"`;
+      }
+      return stringField;
+    };
+
+    const csvContent = headers.map(escapeCsv).join(',');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");

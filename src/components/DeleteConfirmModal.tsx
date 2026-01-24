@@ -11,6 +11,7 @@ interface DeleteConfirmModalProps {
   message?: string;
   facilityName?: string;
   isDeletingAll?: boolean;
+  children?: React.ReactNode;
 }
 
 export default function DeleteConfirmModal({
@@ -20,7 +21,8 @@ export default function DeleteConfirmModal({
   title = 'Delete Facility',
   message = 'Are you sure you want to delete this facility? This action cannot be undone.',
   facilityName,
-  isDeletingAll = false
+  isDeletingAll = false,
+  children
 }: DeleteConfirmModalProps) {
   if (!isOpen) return null;
 
@@ -142,6 +144,8 @@ export default function DeleteConfirmModal({
           >
             {message}
           </p>
+
+          {children}
 
           {/* Facility name if provided */}
           {facilityName && (

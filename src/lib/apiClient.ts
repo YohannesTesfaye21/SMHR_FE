@@ -56,7 +56,7 @@ apiClient.interceptors.request.use(
 
     if (isClient) {
       // Client-side: Use explicit backend URL if available, otherwise fallback to proxy
-      const publicApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+      const publicApiUrl = process.env.BACKEND_API_URL;
 
       if (publicApiUrl) {
         config.baseURL = publicApiUrl;
